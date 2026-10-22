@@ -1,5 +1,5 @@
 // ============================================================
-// PANDA CARD — ADMIN.JS (Role-aware)
+// PANDA CARD — ADMIN.JS (Role-aware + R2 Upload + Notifications)
 // Owner: solforeyx@gmail.com — full access, no password
 // Staff: staff@gmail.com — Treasury, Withdrawals, Cards only
 // ============================================================
@@ -13,7 +13,7 @@ const ROLE_MAP = {
 };
 
 const ALLOWED_PAGES = {
-  'owner': ['index.html', 'money.html', 'withdrawals.html', 'upload-card.html', 'users.html', 'announcements.html', 'config.html'],
+  'owner': ['index.html', 'money.html', 'withdrawals.html', 'upload-card.html', 'users.html', 'announcements.html', 'notifications.html', 'config.html'],
   'staff': ['index.html', 'money.html', 'withdrawals.html', 'upload-card.html']
 };
 
@@ -61,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function applyRoleUI() {
-  // Hide nav links the current role cannot access
   document.querySelectorAll('[data-roles]').forEach(el => {
     const roles = (el.getAttribute('data-roles') || '').split(',').map(s => s.trim());
     if (roles.includes(currentRole)) {
@@ -104,14 +103,12 @@ async function adminLogin() {
   if (error) {
     return showToast('Login Failed: ' + error.message, 'error');
   }
-  // onAuthStateChange handles the rest.
 }
 
 async function adminLogout() {
   await sbClient.auth.signOut();
 }
 
-// Back button: direct navigation for both roles. Roles handle security.
 function goToDashboard() {
   window.location.href = 'index.html';
 }
@@ -165,6 +162,36 @@ function escapeHTML(str) {
     .replace(/'/g, '&#39;');
 }
 
+// ============================================================
+// R2 UPLOAD HELPER FUNCTION
+// ============================================================
+async function uploadImageToR2(file) {
+  try {
+    // 1. Get secure upload URL from Supabase Edge Function
+    const { data, error } = await sbClient.functions.invoke('generate-r2-upload-url', {
+      body: { fileName: file.name, contentType: file.type }
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data || !data.uploadUrl) throw new Error('Failed to generate upload URL');
+
+    // 2. Upload file directly to Cloudflare R2
+    const uploadRes = await fetch(data.uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type }
+    });
+
+    if (!uploadRes.ok) throw new Error('Failed to upload to R2');
+
+    // 3. Return the permanent public URL
+    return data.publicUrl;
+  } catch (err) {
+    console.error('R2 Upload Error:', err);
+    throw err;
+  }
+}
+
 window.adminLogin = adminLogin;
 window.adminLogout = adminLogout;
 window.goToDashboard = goToDashboard;
@@ -172,3 +199,4 @@ window.showToast = showToast;
 window.formatMoney = formatMoney;
 window.formatDate = formatDate;
 window.escapeHTML = escapeHTML;
+window.uploadImageToR2 = uploadImageToR2;

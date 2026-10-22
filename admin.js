@@ -1,6 +1,6 @@
 // ============================================================
 // PANDA CARD — ADMIN.JS (Role-aware + R2 Upload + Notifications)
-// Owner: solforeyx@gmail.com — full access, no password
+// Owner: solforeyx@gmail.com — full access
 // Staff: staff@gmail.com — Treasury, Withdrawals, Cards only
 // ============================================================
 
@@ -13,20 +13,55 @@ const ROLE_MAP = {
 };
 
 const ALLOWED_PAGES = {
-  'owner': ['index.html', 'money.html', 'withdrawals.html', 'upload-card.html', 'users.html', 'announcements.html', 'notifications.html', 'config.html'],
-  'staff': ['index.html', 'money.html', 'withdrawals.html', 'upload-card.html']
+  'owner': [
+    'index.html',
+    'money.html',
+    'withdrawals.html',
+    'upload-card.html',
+    'users.html',
+    'announcements.html',
+    'notifications.html',
+    'config.html'
+  ],
+  'staff': [
+    'index.html',
+    'money.html',
+    'withdrawals.html',
+    'upload-card.html'
+  ]
 };
 
 let sbClient = null;
 let currentRole = null;
+let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   window.sbClient = sbClient;
 
+  // Enter key submits login
+  const pwd = document.getElementById('adminPassword');
+  if (pwd) {
+    pwd.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') adminLogin();
+    });
+  }
+  const eml = document.getElementById('adminEmail');
+  if (eml) {
+    eml.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const p = document.getElementById('adminPassword');
+        if (p) p.focus();
+      }
+    });
+  }
+
   sbClient.auth.onAuthStateChange(async (event, session) => {
     if (!session || !session.user) {
       currentRole = null;
+      currentUser = null;
+      window.currentRole = null;
+      window.currentUser = null;
       showLogin();
       return;
     }
@@ -41,7 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     currentRole = role;
+    currentUser = session.user;
     window.currentRole = role;
+    window.currentUser = session.user;
 
     // Page-level guard: staff cannot open owner-only pages
     const page = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
@@ -55,11 +92,18 @@ document.addEventListener('DOMContentLoaded', () => {
     showDashboard(session.user);
 
     if (typeof window.loadPageData === 'function') {
-      try { window.loadPageData(); } catch (e) { console.error(e); }
+      try {
+        await window.loadPageData();
+      } catch (e) {
+        console.error('loadPageData error:', e);
+      }
     }
   });
 });
 
+// ============================================================
+// ROLE UI
+// ============================================================
 function applyRoleUI() {
   document.querySelectorAll('[data-roles]').forEach(el => {
     const roles = (el.getAttribute('data-roles') || '').split(',').map(s => s.trim());
@@ -70,11 +114,20 @@ function applyRoleUI() {
     }
   });
 }
+window.applyRoleUI = applyRoleUI;
 
 function showLogin() {
   document.querySelectorAll('.login-screen').forEach(el => el.classList.remove('hidden'));
   document.querySelectorAll('.app-layout').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.admin-dashboard').forEach(el => el.classList.add('hidden'));
+
+  // Clear stale credentials
+  const pwd = document.getElementById('adminPassword');
+  if (pwd) pwd.value = '';
+  const eml = document.getElementById('adminEmail');
+  if (eml && eml.value !== 'solforeyx@gmail.com') {
+    eml.value = 'solforeyx@gmail.com';
+  }
 }
 
 function showDashboard(user) {
@@ -86,7 +139,13 @@ function showDashboard(user) {
   });
 }
 
+// ============================================================
+// AUTH
+// ============================================================
 async function adminLogin() {
+  if (!sbClient) {
+    return showToast('Initializing... please try again.', 'info');
+  }
   const emailEl = document.getElementById('adminEmail');
   const passwordEl = document.getElementById('adminPassword');
   const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
@@ -113,6 +172,9 @@ function goToDashboard() {
   window.location.href = 'index.html';
 }
 
+// ============================================================
+// UI HELPERS
+// ============================================================
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.textContent = message;
@@ -163,11 +225,10 @@ function escapeHTML(str) {
 }
 
 // ============================================================
-// R2 UPLOAD HELPER FUNCTION
+// R2 UPLOAD HELPER
 // ============================================================
 async function uploadImageToR2(file) {
   try {
-    // 1. Get secure upload URL from Supabase Edge Function
     const { data, error } = await sbClient.functions.invoke('generate-r2-upload-url', {
       body: { fileName: file.name, contentType: file.type }
     });
@@ -175,7 +236,6 @@ async function uploadImageToR2(file) {
     if (error) throw new Error(error.message);
     if (!data || !data.uploadUrl) throw new Error('Failed to generate upload URL');
 
-    // 2. Upload file directly to Cloudflare R2
     const uploadRes = await fetch(data.uploadUrl, {
       method: 'PUT',
       body: file,
@@ -184,7 +244,6 @@ async function uploadImageToR2(file) {
 
     if (!uploadRes.ok) throw new Error('Failed to upload to R2');
 
-    // 3. Return the permanent public URL
     return data.publicUrl;
   } catch (err) {
     console.error('R2 Upload Error:', err);
@@ -192,6 +251,9 @@ async function uploadImageToR2(file) {
   }
 }
 
+// ============================================================
+// EXPORTS
+// ============================================================
 window.adminLogin = adminLogin;
 window.adminLogout = adminLogout;
 window.goToDashboard = goToDashboard;

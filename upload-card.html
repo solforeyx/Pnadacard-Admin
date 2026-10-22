@@ -7,6 +7,11 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="admin.css">
+  <style>
+    .dynamic-fields { display: none; background: rgba(255,215,0,0.05); border: 1px dashed var(--gold); padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+    .dynamic-fields.active { display: block; }
+    .coin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  </style>
 </head>
 <body>
   <div id="loginScreen" class="login-screen">
@@ -37,39 +42,98 @@
       <a href="withdrawals.html" data-roles="owner,staff">Withdrawals</a>
       <a href="upload-card.html" class="active" data-roles="owner,staff">Cards</a>
       <a href="users.html" data-roles="owner">Users</a>
-      <a href="announcements.html" data-roles="owner">News</a>
+      <a href="announcements.html" data-roles="owner">Announcements</a>
+      <a href="notifications.html" data-roles="owner">Notifications</a>
       <a href="config.html" data-roles="owner">Config</a>
     </nav>
 
     <main class="container">
       <div class="section-box">
         <h2><span class="material-icons">add_card</span> Upload New</h2>
+        
         <div class="form-row">
-          <div class="form-group"><label>Name</label><input type="text" id="cName"></div>
-          <div class="form-group"><label>Category</label>
-            <select id="cCat">
-              <option value="newly">Newly Updated</option>
-              <option value="hot">Hot</option>
-              <option value="neutral">Neutral</option>
-              <option value="cold">Cold</option>
-              <option value="vip">VIP</option>
-              <option value="bonus">Bonus</option>
-              <option value="disappearing">Disappearing</option>
+          <div class="form-group">
+            <label>Card Name</label>
+            <input type="text" id="cName" placeholder="e.g. Golden Panda">
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="cCat" onchange="toggleCategoryFields()">
+              <option value="standard">Standard (Hot/Cold/Neutral/New)</option>
+              <option value="vip">VIP Card</option>
+              <option value="bonus">Bonus Card</option>
+              <option value="disappearing">Disappearing Card</option>
             </select>
           </div>
         </div>
-        <div class="form-group"><label>Image URL</label><input type="text" id="cImg"></div>
-        <div class="form-row">
-          <div class="form-group"><label>Price (₦)</label><input type="number" id="cPrice"></div>
-          <div class="form-group"><label>Coin Fee</label><input type="number" id="cCoin" value="20"></div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="cDesc" rows="2" placeholder="Short description of the card..."></textarea>
         </div>
-        <button class="btn-primary" onclick="saveCard()">Publish Card</button>
+
+        <div class="form-group">
+          <label>Card Image</label>
+          <input type="file" id="cImgFile" accept="image/*" onchange="previewImage(event)" style="padding: 8px; background: var(--surface); border: 1px dashed var(--gold); cursor: pointer;">
+          <div id="imgPreviewContainer" style="margin-top: 10px; display: none;">
+            <img id="imgPreview" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid var(--border);">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Original Price (₦)</label>
+            <input type="number" id="cPrice" placeholder="e.g. 5000">
+          </div>
+        </div>
+
+        <!-- Dynamic Fields for VIP -->
+        <div id="vipFields" class="dynamic-fields">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="text-gold">VIP Coin Requirement</label>
+            <input type="number" id="vipReq" value="100" placeholder="Coins needed to buy">
+          </div>
+        </div>
+
+        <!-- Dynamic Fields for Bonus -->
+        <div id="bonusFields" class="dynamic-fields">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="text-gold">Bonus Referral Threshold</label>
+            <input type="number" id="bonusThreshold" value="10" placeholder="Referrals needed to get this card">
+          </div>
+        </div>
+
+        <!-- Dynamic Fields for Disappearing -->
+        <div id="disappearingFields" class="dynamic-fields">
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="form-group">
+              <label class="text-gold">Appears At</label>
+              <input type="datetime-local" id="disAppears">
+            </div>
+            <div class="form-group">
+              <label class="text-gold">Expires At</label>
+              <input type="datetime-local" id="disExpires">
+            </div>
+          </div>
+        </div>
+
+        <div class="section-box" style="background: var(--bg); margin-top: 12px; margin-bottom: 12px; padding: 12px;">
+          <h2 style="font-size: 12px; margin-bottom: 8px;"><span class="material-icons">toll</span> Coin Fees (PC)</h2>
+          <div class="coin-grid">
+            <div class="form-group"><label>Newly</label><input type="number" id="feeNewly" value="20"></div>
+            <div class="form-group"><label>Hot</label><input type="number" id="feeHot" value="40"></div>
+            <div class="form-group"><label>Neutral</label><input type="number" id="feeNeutral" value="30"></div>
+            <div class="form-group"><label>Cold</label><input type="number" id="feeCold" value="20"></div>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btnPublish" onclick="saveCard()">Publish Card</button>
       </div>
 
       <div class="section-box">
         <h2><span class="material-icons">list</span> Existing Cards</h2>
         <table>
-          <thead><tr><th>Name</th><th>Cat</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>Cat/Status</th><th>Price</th><th>Action</th></tr></thead>
           <tbody id="cardsTable"></tbody>
         </table>
       </div>
@@ -81,6 +145,8 @@
       <a href="withdrawals.html"><span class="material-icons">payments</span>Payouts</a>
       <a href="upload-card.html" class="active"><span class="material-icons">add_card</span>Cards</a>
       <a href="users.html" data-roles="owner"><span class="material-icons">people</span>Users</a>
+      <a href="announcements.html" data-roles="owner"><span class="material-icons">campaign</span>News</a>
+      <a href="notifications.html" data-roles="owner"><span class="material-icons">notifications</span>Push</a>
     </nav>
   </div>
 
@@ -90,57 +156,154 @@
       const { data } = await sbClient.from('cards').select('*').order('created_at', { ascending: false });
       document.getElementById('cardsTable').innerHTML = (data || []).map(c => `
         <tr>
-          <td>${escapeHTML(c.name)}</td>
-          <td><span class="badge ${c.status || 'pending'}">${c.category}</span></td>
+          <td>
+            <div style="font-weight:600;">${escapeHTML(c.name)}</div>
+            <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(c.card_code)}</div>
+          </td>
+          <td>
+            ${c.is_vip ? '<span class="badge vip" style="background:#FFD700;color:#000;">VIP</span>' : ''}
+            ${c.is_bonus ? '<span class="badge bonus" style="background:#FF6B35;color:#fff;">BONUS</span>' : ''}
+            ${c.is_disappearing ? '<span class="badge disappearing" style="background:#9B59B6;color:#fff;">DISAPPEARING</span>' : ''}
+            ${!c.is_vip && !c.is_bonus && !c.is_disappearing ? `<span class="badge ${c.status}">${c.status}</span>` : ''}
+          </td>
+          <td>${formatMoney(c.original_price)}</td>
           <td><button class="btn-sm reject" onclick="delCard('${c.id}')">Del</button></td>
         </tr>
       `).join('');
     };
 
+    function toggleCategoryFields() {
+      const cat = document.getElementById('cCat').value;
+      document.getElementById('vipFields').classList.remove('active');
+      document.getElementById('bonusFields').classList.remove('active');
+      document.getElementById('disappearingFields').classList.remove('active');
+
+      if (cat === 'vip') document.getElementById('vipFields').classList.add('active');
+      if (cat === 'bonus') document.getElementById('bonusFields').classList.add('active');
+      if (cat === 'disappearing') document.getElementById('disappearingFields').classList.add('active');
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('imgPreview').src = e.target.result;
+          document.getElementById('imgPreviewContainer').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+      } else {
+        document.getElementById('imgPreviewContainer').style.display = 'none';
+      }
+    }
+
     async function saveCard() {
       const name = document.getElementById('cName').value.trim();
-      const price = parseFloat(document.getElementById('cPrice').value);
+      const desc = document.getElementById('cDesc').value.trim();
       const cat = document.getElementById('cCat').value;
-      const coinFee = parseInt(document.getElementById('cCoin').value) || 20;
+      const price = parseFloat(document.getElementById('cPrice').value);
+      const fileInput = document.getElementById('cImgFile');
+      const file = fileInput.files[0];
 
-      if (!name || !price) return showToast('Name and Price required', 'error');
+      if (!name || !price) return showToast('Name and Original Price required', 'error');
+      if (!file) return showToast('Please select an image for the card', 'error');
 
-      const cardCode = 'PANDA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+      // Gather Coin Fees
+      const feeNewly = parseInt(document.getElementById('feeNewly').value) || 20;
+      const feeHot = parseInt(document.getElementById('feeHot').value) || 40;
+      const feeNeutral = parseInt(document.getElementById('feeNeutral').value) || 30;
+      const feeCold = parseInt(document.getElementById('feeCold').value) || 20;
 
-      const { error } = await sbClient.from('cards').insert([{
-        card_code: cardCode,
-        name: name,
-        category: cat,
-        image_url: document.getElementById('cImg').value,
-        original_price: price,
-        current_price: price,
-        floor_price: price,
-        ceiling_price: price * 10,
-        coin_fee_newly: coinFee,
-        coin_fee_cold: coinFee,
-        coin_fee_neutral: coinFee,
-        coin_fee_hot: coinFee,
-        status: ['vip', 'bonus', 'disappearing'].includes(cat) ? 'neutral' : cat,
-        is_vip: cat === 'vip',
-        is_bonus: cat === 'bonus',
-        is_disappearing: cat === 'disappearing',
-        is_active: true
-      }]);
-      if (error) return showToast(error.message, 'error');
-      showToast('Card Published!', 'success');
-      document.getElementById('cName').value = '';
-      document.getElementById('cImg').value = '';
-      document.getElementById('cPrice').value = '';
-      loadPageData();
+      const btn = document.getElementById('btnPublish');
+      btn.disabled = true;
+      btn.textContent = 'Uploading Image...';
+
+      try {
+        // 1. Upload image to R2
+        const imageUrl = await uploadImageToR2(file);
+
+        btn.textContent = 'Saving Card...';
+
+        // 2. Prepare Payload
+        const cardCode = 'PANDA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+        const now = new Date().toISOString();
+
+        const payload = {
+          card_code: cardCode,
+          name: name,
+          description: desc,
+          image_url: imageUrl,
+          category: cat === 'standard' ? 'neutral' : cat, // Set category field
+          original_price: price,
+          current_price: price,
+          floor_price: price,
+          ceiling_price: price * 10,
+          status: 'newly', // All new cards start as 'newly'
+          is_active: true,
+          is_vip: cat === 'vip',
+          is_bonus: cat === 'bonus',
+          is_disappearing: cat === 'disappearing',
+          
+          // Coin Fees
+          coin_fee_newly: feeNewly,
+          coin_fee_hot: feeHot,
+          coin_fee_neutral: feeNeutral,
+          coin_fee_cold: feeCold,
+
+          // Initialize Price History exactly as price-engine expects it
+          price_history: [{ price: price, date: now, status: 'newly' }]
+        };
+
+        // 3. Attach Dynamic Fields based on Category
+        if (cat === 'vip') {
+          payload.vip_coin_requirement = parseInt(document.getElementById('vipReq').value) || 0;
+        }
+        if (cat === 'bonus') {
+          payload.bonus_referral_threshold = parseInt(document.getElementById('bonusThreshold').value) || 10;
+        }
+        if (cat === 'disappearing') {
+          const disAppears = document.getElementById('disAppears').value;
+          const disExpires = document.getElementById('disExpires').value;
+          
+          if (!disAppears || !disExpires) throw new Error('Please set both Appears At and Expires At times');
+          
+          payload.disappear_appears_at = new Date(disAppears).toISOString();
+          payload.disappear_expires_at = new Date(disExpires).toISOString();
+        }
+
+        // 4. Insert into Database
+        const { error } = await sbClient.from('cards').insert([payload]);
+        if (error) throw error;
+
+        showToast('Card Published Successfully!', 'success');
+        
+        // Reset form
+        document.getElementById('cName').value = '';
+        document.getElementById('cDesc').value = '';
+        document.getElementById('cPrice').value = '';
+        document.getElementById('cCat').value = 'standard';
+        toggleCategoryFields();
+        fileInput.value = '';
+        document.getElementById('imgPreviewContainer').style.display = 'none';
+        loadPageData();
+
+      } catch (error) {
+        showToast(error.message || 'Failed to publish card', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Publish Card';
+      }
     }
 
     async function delCard(id) {
-      if (!confirm('Delete card?')) return;
+      if (!confirm('Delete card permanently? This will break users who own it.')) return;
       const { error } = await sbClient.from('cards').delete().eq('id', id);
       if (error) return showToast(error.message, 'error');
       showToast('Card deleted', 'success');
       loadPageData();
     }
+    window.previewImage = previewImage;
+    window.toggleCategoryFields = toggleCategoryFields;
     window.saveCard = saveCard;
     window.delCard = delCard;
   </script>

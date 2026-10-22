@@ -43,9 +43,24 @@
 
     <main class="container">
       <div class="section-box">
+        <h2 style="font-size:14px; margin-bottom:10px;">
+          <span class="material-icons" style="font-size:16px; vertical-align:middle;">pending_actions</span>
+          Pending Payouts
+        </h2>
         <table>
           <thead><tr><th>User / Bank</th><th>Amount</th><th>Action</th></tr></thead>
           <tbody id="wdTable"></tbody>
+        </table>
+      </div>
+
+      <div class="section-box" style="margin-top:16px;">
+        <h2 style="font-size:14px; margin-bottom:10px;">
+          <span class="material-icons" style="font-size:16px; vertical-align:middle;">history</span>
+          Recently Processed (last 20)
+        </h2>
+        <table>
+          <thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="wdHistoryTable"></tbody>
         </table>
       </div>
     </main>
@@ -59,43 +74,164 @@
     </nav>
   </div>
 
+  <!-- REJECT REASON MODAL -->
+  <div class="modal-overlay" id="rejectModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="document.getElementById('rejectModal').classList.remove('open')">&times;</button>
+      <h2 class="text-gold mb-4" style="font-size:16px;">Reject Withdrawal</h2>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+        The amount and DP will be automatically refunded to the user's account. They will be notified.
+      </p>
+      <input type="hidden" id="rejectWdId">
+      <div class="form-group">
+        <label>Reason for rejection (sent to user)</label>
+        <input type="text" id="rejectReason" placeholder="e.g. Invalid bank details, duplicate request...">
+      </div>
+      <button class="btn-primary" style="background:var(--red);" onclick="confirmReject()">Confirm Rejection & Refund</button>
+    </div>
+  </div>
+
   <script src="admin.js"></script>
   <script>
     window.loadPageData = async function() {
-      const { data } = await sbClient.from('withdrawals')
+      // === PENDING ===
+      const { data: pending, error: pErr } = await sbClient.from('withdrawals')
         .select('*, users(email, full_name)')
         .eq('status', 'pending')
         .order('requested_at');
+
       const tbody = document.getElementById('wdTable');
-      if (!data || !data.length) {
+
+      if (pErr) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--red);">${escapeHTML(pErr.message)}</td></tr>`;
+      } else if (!pending || !pending.length) {
         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No pending payouts.</td></tr>';
-        return;
+      } else {
+        tbody.innerHTML = pending.map(w => `
+          <tr>
+            <td>
+              <div style="font-weight:600;">${escapeHTML(w.users?.full_name || 'User')}</div>
+              <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(w.users?.email || '')}</div>
+              <div style="font-size:10px; color:var(--text-muted);">
+                ${escapeHTML(w.bank_details?.bank || '')} — ${escapeHTML(w.bank_details?.account_number || '')}
+              </div>
+              <div style="font-size:10px; color:var(--text-muted);">
+                ${escapeHTML(w.bank_details?.accountName || w.bank_details?.account_name || '')}
+              </div>
+            </td>
+            <td>
+              <div class="text-gold" style="font-weight:700;">${formatMoney(w.amount)}</div>
+              <div style="font-size:10px; color:var(--text-muted);">
+                Net: ${formatMoney(w.net_amount)} (fee ${formatMoney(w.fee)})
+              </div>
+              <div style="font-size:10px; color:var(--text-muted);">${w.dp_used || 0} DP used</div>
+            </td>
+            <td>
+              <button class="btn-sm approve" onclick="processWd('${w.id}', 'paid')">Paid</button>
+              <button class="btn-sm reject" onclick="openRejectModal('${w.id}')">Reject</button>
+            </td>
+          </tr>
+        `).join('');
       }
 
-      tbody.innerHTML = data.map(w => `
-        <tr>
-          <td>
-            <div style="font-weight:600;">${formatMoney(w.net_amount)}</div>
-            <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(w.users?.email)}</div>
-            <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(w.bank_details?.bank)} - ${escapeHTML(w.bank_details?.account_number)}</div>
-          </td>
-          <td class="text-gold">${formatMoney(w.amount)}</td>
-          <td>
-            <button class="btn-sm approve" onclick="processWd('${w.id}', 'approved')">Approve</button>
-            <button class="btn-sm reject" onclick="processWd('${w.id}', 'rejected')">Reject</button>
-          </td>
-        </tr>
-      `).join('');
+      // === RECENTLY PROCESSED ===
+      const { data: processed } = await sbClient.from('withdrawals')
+        .select('*, users(email, full_name)')
+        .in('status', ['paid', 'rejected', 'approved'])
+        .order('processed_at', { ascending: false })
+        .limit(20);
+
+      const histBody = document.getElementById('wdHistoryTable');
+      if (!processed || !processed.length) {
+        histBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No history yet.</td></tr>';
+      } else {
+        histBody.innerHTML = processed.map(w => {
+          const color = w.status === 'paid' ? 'var(--green)' : w.status === 'rejected' ? 'var(--red)' : 'var(--gold)';
+          return `
+            <tr>
+              <td>
+                <div style="font-weight:600; font-size:12px;">${escapeHTML(w.users?.full_name || 'User')}</div>
+                <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(w.users?.email || '')}</div>
+              </td>
+              <td>${formatMoney(w.amount)}</td>
+              <td>
+                <span style="color:${color}; font-weight:700; font-size:11px; text-transform:uppercase;">
+                  ${escapeHTML(w.status)}
+                </span>
+                ${w.admin_note ? `<div style="font-size:10px; color:var(--text-muted);">${escapeHTML(w.admin_note)}</div>` : ''}
+              </td>
+              <td style="font-size:11px; color:var(--text-muted);">
+                ${w.processed_at ? formatDate(w.processed_at) : '—'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
     };
 
     async function processWd(id, status) {
-      if (!confirm(`Mark this as ${status}?`)) return;
-      const { error } = await sbClient.from('withdrawals').update({ status, processed_at: new Date() }).eq('id', id);
-      if (error) return showToast(error.message, 'error');
-      showToast(`Withdrawal ${status}`, 'success');
-      loadPageData();
+      // status = 'paid' only from main button. Reject goes through modal.
+      if (status !== 'paid') return;
+
+      if (!confirm('Confirm you have SENT the money externally?\n\nClicking OK will:\n• Mark as PAID\n• Send notification to the user\n• Remove from pending list')) return;
+
+      const btn = event && event.target;
+      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+
+      try {
+        const { data, error } = await sbClient.rpc('process_withdrawal', {
+          p_withdrawal_id: id,
+          p_action: 'paid',
+          p_admin_note: 'Paid by admin'
+        });
+        if (error) throw new Error(error.message);
+        if (data && data.error) throw new Error(data.error);
+
+        showToast('Withdrawal marked as PAID', 'success');
+        loadPageData();
+      } catch (err) {
+        showToast(err.message || 'Failed to process', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Paid'; }
+      }
     }
+
+    function openRejectModal(id) {
+      document.getElementById('rejectWdId').value = id;
+      document.getElementById('rejectReason').value = '';
+      document.getElementById('rejectModal').classList.add('open');
+    }
+
+    async function confirmReject() {
+      const id = document.getElementById('rejectWdId').value;
+      const reason = document.getElementById('rejectReason').value.trim();
+      if (reason.length < 3) return showToast('Please provide a rejection reason', 'error');
+
+      if (!confirm('Reject this withdrawal?\n\n• Amount + DP will be REFUNDED\n• User will be notified\n\nThis cannot be undone.')) return;
+
+      const btn = event && event.target;
+      if (btn) { btn.disabled = true; btn.textContent = 'Rejecting...'; }
+
+      try {
+        const { data, error } = await sbClient.rpc('process_withdrawal', {
+          p_withdrawal_id: id,
+          p_action: 'rejected',
+          p_admin_note: reason
+        });
+        if (error) throw new Error(error.message);
+        if (data && data.error) throw new Error(data.error);
+
+        showToast('Withdrawal rejected and refunded', 'success');
+        document.getElementById('rejectModal').classList.remove('open');
+        loadPageData();
+      } catch (err) {
+        showToast(err.message || 'Failed to reject', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirm Rejection & Refund'; }
+      }
+    }
+
     window.processWd = processWd;
+    window.openRejectModal = openRejectModal;
+    window.confirmReject = confirmReject;
   </script>
 </body>
 </html>

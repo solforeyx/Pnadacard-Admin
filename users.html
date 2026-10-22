@@ -45,7 +45,7 @@
       <div class="section-box">
         <input type="text" id="searchInput" placeholder="Search by name, email or username..." onkeyup="filterUsers()" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:white; margin-bottom:12px; outline:none;">
         <table>
-          <thead><tr><th>User</th><th>Stage</th><th>Earnings</th><th>Action</th></tr></thead>
+          <thead><tr><th>User</th><th>Stage</th><th>Earnings</th><th>Status</th><th>Action</th></tr></thead>
           <tbody id="usersTable"></tbody>
         </table>
       </div>
@@ -60,15 +60,25 @@
     </nav>
   </div>
 
+  <!-- ============================================================ -->
+  <!-- USER DETAILS MODAL                                            -->
+  <!-- ============================================================ -->
   <div class="modal-overlay" id="userModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
       <button class="modal-close" onclick="document.getElementById('userModal').classList.remove('open')">&times;</button>
       <h2 id="muName" class="text-gold mb-4" style="font-size:16px;">User</h2>
+      <div id="muEmail" style="font-size:11px; color:var(--text-muted); margin-bottom:12px;"></div>
       <input type="hidden" id="muId">
+
+      <!-- PROFILE -->
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin:12px 0 6px; font-weight:700;">Profile</div>
       <div class="form-row">
         <div class="form-group"><label>Username</label><input type="text" id="muUsername"></div>
         <div class="form-group"><label>Phone</label><input type="text" id="muPhone"></div>
       </div>
+
+      <!-- BALANCES -->
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin:16px 0 6px; font-weight:700;">Balances (audited adjust)</div>
       <div class="form-row">
         <div class="form-group"><label>Deposit (₦)</label><input type="number" id="muDeposit"></div>
         <div class="form-group"><label>Earnings (₦)</label><input type="number" id="muEarnings"></div>
@@ -77,8 +87,47 @@
         <div class="form-group"><label>Coins (PC)</label><input type="number" id="muCoins"></div>
         <div class="form-group"><label>DP</label><input type="number" id="muDp"></div>
       </div>
+
+      <div class="form-group" style="margin-top:10px;">
+        <label>Reason for balance change <span style="color:var(--red);">*</span></label>
+        <input type="text" id="muReason" placeholder="e.g. Manual refund, bonus adjustment...">
+        <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
+          Required if you change any balance. Logged to transaction history + user notification.
+        </div>
+      </div>
+
       <button class="btn-primary" onclick="saveUser()">Save Changes</button>
+
+      <!-- QUICK ACTIONS -->
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); margin:20px 0 6px; font-weight:700;">Quick Actions</div>
+
+      <button class="btn-logout" style="width:100%; margin-top:8px;" onclick="openTransactions()">
+        <span class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:4px;">receipt_long</span>
+        View Transaction History
+      </button>
+
       <button class="btn-logout" style="width:100%; margin-top:8px; color:var(--red); border-color:var(--red);" id="btnBan" onclick="toggleBan()">Ban User</button>
+
+      <button class="btn-logout" style="width:100%; margin-top:8px; color:#F59E0B; border-color:#F59E0B;" id="btnRevive" onclick="reviveAccount()">Revive Account</button>
+
+      <button class="btn-logout" style="width:100%; margin-top:8px; color:var(--red); border-color:var(--red); background:rgba(239,68,68,0.1);" onclick="deleteUserPermanently()">
+        <span class="material-icons" style="font-size:14px; vertical-align:middle; margin-right:4px;">delete_forever</span>
+        Delete Account Permanently
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- TRANSACTIONS MODAL                                            -->
+  <!-- ============================================================ -->
+  <div class="modal-overlay" id="txModal">
+    <div class="modal-content" style="max-height:90vh; overflow-y:auto;">
+      <button class="modal-close" onclick="document.getElementById('txModal').classList.remove('open')">&times;</button>
+      <h2 class="text-gold mb-4" style="font-size:16px;">Transaction History</h2>
+      <div id="txUserLabel" style="font-size:11px; color:var(--text-muted); margin-bottom:12px;"></div>
+      <div id="txList" style="max-height:60vh; overflow-y:auto;">
+        <div style="text-align:center; color:var(--text-muted); padding:20px;">Loading...</div>
+      </div>
     </div>
   </div>
 
@@ -92,6 +141,12 @@
       renderUsers(allUsers);
     };
 
+    function statusBadge(u) {
+      if (u.is_banned) return '<span style="background:var(--red); color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:700;">BANNED</span>';
+      if (u.deletion_status === 'pending_deletion') return '<span style="background:#F59E0B; color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:700;">DELETING</span>';
+      return '<span style="background:#10B981; color:white; padding:2px 8px; border-radius:10px; font-size:9px; font-weight:700;">ACTIVE</span>';
+    }
+
     function renderUsers(users) {
       document.getElementById('usersTable').innerHTML = users.map(u => `
         <tr>
@@ -101,6 +156,7 @@
           </td>
           <td>Stage ${u.stage || 1}</td>
           <td class="text-gold">${formatMoney(u.earnings_balance)}</td>
+          <td>${statusBadge(u)}</td>
           <td><button class="btn-sm view" onclick="openUser('${u.id}')">Manage</button></td>
         </tr>
       `).join('');
@@ -118,35 +174,84 @@
     function openUser(id) {
       const u = allUsers.find(x => x.id === id);
       if (!u) return;
+
       document.getElementById('muId').value = u.id;
-      document.getElementById('muName').textContent = u.full_name;
+      document.getElementById('muName').textContent = u.full_name || 'User';
+      document.getElementById('muEmail').textContent = u.email || '';
       document.getElementById('muUsername').value = u.username || '';
       document.getElementById('muPhone').value = u.phone || '';
       document.getElementById('muDeposit').value = u.deposit_balance || 0;
       document.getElementById('muEarnings').value = u.earnings_balance || 0;
       document.getElementById('muCoins').value = u.coins || 0;
       document.getElementById('muDp').value = u.diamond_points || 0;
+      document.getElementById('muReason').value = '';
 
-      const btn = document.getElementById('btnBan');
-      btn.textContent = u.is_banned ? 'Unban User' : 'Ban User';
-      btn.style.color = u.is_banned ? 'var(--green)' : 'var(--red)';
-      btn.style.borderColor = u.is_banned ? 'var(--green)' : 'var(--red)';
+      const btnBan = document.getElementById('btnBan');
+      btnBan.textContent = u.is_banned ? 'Unban User' : 'Ban User';
+      btnBan.style.color = u.is_banned ? 'var(--green)' : 'var(--red)';
+      btnBan.style.borderColor = u.is_banned ? 'var(--green)' : 'var(--red)';
+
+      const btnRevive = document.getElementById('btnRevive');
+      if (u.deletion_status === 'pending_deletion') {
+        btnRevive.style.display = '';
+        btnRevive.textContent = 'Revive Account (Cancel Deletion)';
+      } else {
+        btnRevive.style.display = 'none';
+      }
 
       document.getElementById('userModal').classList.add('open');
     }
 
     async function saveUser() {
       const id = document.getElementById('muId').value;
-      const updates = {
-        username: document.getElementById('muUsername').value,
-        phone: document.getElementById('muPhone').value,
-        deposit_balance: parseFloat(document.getElementById('muDeposit').value) || 0,
-        earnings_balance: parseFloat(document.getElementById('muEarnings').value) || 0,
-        coins: parseInt(document.getElementById('muCoins').value) || 0,
-        diamond_points: parseInt(document.getElementById('muDp').value) || 0
-      };
-      const { error } = await sbClient.from('users').update(updates).eq('id', id);
-      if (error) return showToast(error.message, 'error');
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+
+      // Profile fields (safe — direct update)
+      const newUsername = document.getElementById('muUsername').value.trim();
+      const newPhone = document.getElementById('muPhone').value.trim();
+
+      // Balance fields (audited — via RPC)
+      const newDeposit = parseFloat(document.getElementById('muDeposit').value) || 0;
+      const newEarnings = parseFloat(document.getElementById('muEarnings').value) || 0;
+      const newCoins = parseInt(document.getElementById('muCoins').value) || 0;
+      const newDp = parseInt(document.getElementById('muDp').value) || 0;
+
+      const depositDelta = newDeposit - Number(u.deposit_balance || 0);
+      const earningsDelta = newEarnings - Number(u.earnings_balance || 0);
+      const coinsDelta = newCoins - Number(u.coins || 0);
+      const dpDelta = newDp - Number(u.diamond_points || 0);
+
+      const hasBalanceChange = depositDelta !== 0 || earningsDelta !== 0 || coinsDelta !== 0 || dpDelta !== 0;
+      const reason = document.getElementById('muReason').value.trim();
+
+      if (hasBalanceChange && reason.length < 3) {
+        return showToast('Please provide a reason for the balance change.', 'error');
+      }
+
+      // Save profile fields first (if changed)
+      if (newUsername !== (u.username || '') || newPhone !== (u.phone || '')) {
+        const { error: profErr } = await sbClient
+          .from('users')
+          .update({ username: newUsername, phone: newPhone })
+          .eq('id', id);
+        if (profErr) return showToast(profErr.message, 'error');
+      }
+
+      // Save balances via audited RPC
+      if (hasBalanceChange) {
+        const { data, error } = await sbClient.rpc('admin_adjust_balance', {
+          p_user_id: id,
+          p_deposit_delta: depositDelta,
+          p_earnings_delta: earningsDelta,
+          p_coins_delta: coinsDelta,
+          p_dp_delta: dpDelta,
+          p_reason: reason
+        });
+        if (error) return showToast(error.message, 'error');
+        if (data && data.error) return showToast(data.error, 'error');
+      }
+
       showToast('User updated', 'success');
       document.getElementById('userModal').classList.remove('open');
       loadPageData();
@@ -163,10 +268,107 @@
       loadPageData();
     }
 
+    async function reviveAccount() {
+      const id = document.getElementById('muId').value;
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+      const reason = prompt('Reason for revival (optional):', 'Revived by admin');
+      if (reason === null) return;
+
+      const { data, error } = await sbClient.rpc('revive_account', {
+        p_user_id: id,
+        p_reason: reason || 'Revived by admin'
+      });
+      if (error) return showToast(error.message, 'error');
+      if (data && data.error) return showToast(data.error, 'error');
+
+      showToast('Account revived', 'success');
+      document.getElementById('userModal').classList.remove('open');
+      loadPageData();
+    }
+
+    async function deleteUserPermanently() {
+      const id = document.getElementById('muId').value;
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+
+      if (!confirm(`PERMANENTLY delete ${u.email} and ALL their data?\n\nThis cannot be undone. Balances, cards, transactions, history — everything will be erased.`)) return;
+      const confirmText = prompt('Type DELETE (all caps) to confirm:');
+      if (confirmText !== 'DELETE') return showToast('Cancelled', 'info');
+
+      const btn = document.querySelector('#userModal .btn-logout[onclick*="deleteUserPermanently"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
+
+      try {
+        const { data, error } = await sbClient.functions.invoke('admin-delete-user', {
+          body: { userId: id, adminNote: 'Deleted from admin panel' }
+        });
+        if (error) throw new Error(error.message);
+        if (data && data.error) throw new Error(data.error);
+
+        showToast('User permanently deleted', 'success');
+        document.getElementById('userModal').classList.remove('open');
+        loadPageData();
+      } catch (err) {
+        showToast(err.message || 'Delete failed', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Delete Account Permanently'; }
+      }
+    }
+
+    async function openTransactions() {
+      const id = document.getElementById('muId').value;
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+
+      document.getElementById('txUserLabel').textContent = u.email + ' — last 50 transactions';
+      document.getElementById('txList').innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">Loading...</div>';
+      document.getElementById('txModal').classList.add('open');
+
+      const { data, error } = await sbClient
+        .from('transactions')
+        .select('*')
+        .eq('user_id', id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        document.getElementById('txList').innerHTML = `<div style="color:var(--red); padding:12px;">${escapeHTML(error.message)}</div>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        document.getElementById('txList').innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">No transactions yet.</div>';
+        return;
+      }
+
+      const rows = data.map(tx => {
+        const amt = Number(tx.amount || 0);
+        const color = amt > 0 ? 'var(--green)' : amt < 0 ? 'var(--red)' : 'var(--text-muted)';
+        const sign = amt > 0 ? '+' : '';
+        return `
+          <div style="padding:10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:12px;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:12px; font-weight:600; text-transform:capitalize;">${escapeHTML((tx.type || '').replace(/_/g, ' '))}</div>
+              <div style="font-size:10px; color:var(--text-muted);">${formatDate(tx.created_at)}</div>
+              ${tx.reference ? `<div style="font-size:9px; color:var(--text-muted); word-break:break-all;">Ref: ${escapeHTML(tx.reference)}</div>` : ''}
+            </div>
+            <div style="font-size:13px; font-weight:700; color:${color}; white-space:nowrap;">
+              ${sign}${formatMoney(Math.abs(amt))}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('txList').innerHTML = rows;
+    }
+
     window.filterUsers = filterUsers;
     window.openUser = openUser;
     window.saveUser = saveUser;
     window.toggleBan = toggleBan;
+    window.reviveAccount = reviveAccount;
+    window.deleteUserPermanently = deleteUserPermanently;
+    window.openTransactions = openTransactions;
   </script>
 </body>
 </html>

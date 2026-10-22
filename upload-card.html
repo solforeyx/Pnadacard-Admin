@@ -103,16 +103,21 @@
           </div>
         </div>
 
-        <!-- Dynamic Fields for Disappearing -->
+        <!-- Dynamic Fields for Disappearing (UPDATED TO DAY DROPDOWN) -->
         <div id="disappearingFields" class="dynamic-fields">
-          <div class="form-row" style="margin-bottom:0;">
-            <div class="form-group">
-              <label class="text-gold">Appears At</label>
-              <input type="datetime-local" id="disAppears">
-            </div>
-            <div class="form-group">
-              <label class="text-gold">Expires At</label>
-              <input type="datetime-local" id="disExpires">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="text-gold">Day of Week to Appear</label>
+            <select id="disDay">
+              <option value="0">Sunday</option>
+              <option value="1">Monday</option>
+              <option value="2">Tuesday</option>
+              <option value="3">Wednesday</option>
+              <option value="4">Thursday</option>
+              <option value="5">Friday</option>
+              <option value="6">Saturday</option>
+            </select>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+              The system will automatically pick ONE random card from this day's pool every 24 hours.
             </div>
           </div>
         </div>
@@ -163,7 +168,7 @@
           <td>
             ${c.is_vip ? '<span class="badge vip" style="background:#FFD700;color:#000;">VIP</span>' : ''}
             ${c.is_bonus ? '<span class="badge bonus" style="background:#FF6B35;color:#fff;">BONUS</span>' : ''}
-            ${c.is_disappearing ? '<span class="badge disappearing" style="background:#9B59B6;color:#fff;">DISAPPEARING</span>' : ''}
+            ${c.is_disappearing ? `<span class="badge disappearing" style="background:#9B59B6;color:#fff;">DAY ${c.disappear_day}</span>` : ''}
             ${!c.is_vip && !c.is_bonus && !c.is_disappearing ? `<span class="badge ${c.status}">${c.status}</span>` : ''}
           </td>
           <td>${formatMoney(c.original_price)}</td>
@@ -233,24 +238,22 @@
           name: name,
           description: desc,
           image_url: imageUrl,
-          category: cat === 'standard' ? 'neutral' : cat, // Set category field
+          category: cat === 'standard' ? 'neutral' : cat,
           original_price: price,
           current_price: price,
           floor_price: price,
           ceiling_price: price * 10,
-          status: 'newly', // All new cards start as 'newly'
+          status: 'newly',
           is_active: true,
           is_vip: cat === 'vip',
           is_bonus: cat === 'bonus',
           is_disappearing: cat === 'disappearing',
           
-          // Coin Fees
           coin_fee_newly: feeNewly,
           coin_fee_hot: feeHot,
           coin_fee_neutral: feeNeutral,
           coin_fee_cold: feeCold,
 
-          // Initialize Price History exactly as price-engine expects it
           price_history: [{ price: price, date: now, status: 'newly' }]
         };
 
@@ -262,13 +265,10 @@
           payload.bonus_referral_threshold = parseInt(document.getElementById('bonusThreshold').value) || 10;
         }
         if (cat === 'disappearing') {
-          const disAppears = document.getElementById('disAppears').value;
-          const disExpires = document.getElementById('disExpires').value;
+          payload.disappear_day = parseInt(document.getElementById('disDay').value);
           
-          if (!disAppears || !disExpires) throw new Error('Please set both Appears At and Expires At times');
-          
-          payload.disappear_appears_at = new Date(disAppears).toISOString();
-          payload.disappear_expires_at = new Date(disExpires).toISOString();
+          // We do NOT set the timestamp manually here anymore. 
+          // The database cron job handles this automatically every midnight.
         }
 
         // 4. Insert into Database
@@ -296,7 +296,7 @@
     }
 
     async function delCard(id) {
-      if (!confirm('Delete card permanently? This will break users who own it.')) return;
+      if (!confirm('Delete card permanently?')) return;
       const { error } = await sbClient.from('cards').delete().eq('id', id);
       if (error) return showToast(error.message, 'error');
       showToast('Card deleted', 'success');

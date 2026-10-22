@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Cards</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <img src="https://i.imgur.com/9aLmHyS.png">
+      <h1>Panda<span>Admin</span></h1>
+      <input type="email" id="adminEmail" value="solforeyx@gmail.com">
+      <input type="password" id="adminPassword" placeholder="Password">
+      <button class="btn-primary" onclick="adminLogin()">Login</button>
+    </div>
+  </div>
+
+  <div id="adminDashboard" class="app-layout hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="back-btn" onclick="goToDashboard()"><span class="material-icons">chevron_left</span></button>
+        <h1>Manage Cards</h1>
+      </div>
+      <div class="topbar-right">
+        <span class="user-email current-admin-email"></span>
+        <button class="btn-logout" onclick="adminLogout()">Logout</button>
+      </div>
+    </header>
+
+    <nav class="desktop-nav">
+      <a href="index.html" data-roles="owner,staff">Overview</a>
+      <a href="money.html" data-roles="owner,staff">Treasury</a>
+      <a href="withdrawals.html" data-roles="owner,staff">Withdrawals</a>
+      <a href="upload-card.html" class="active" data-roles="owner,staff">Cards</a>
+      <a href="users.html" data-roles="owner">Users</a>
+      <a href="announcements.html" data-roles="owner">News</a>
+      <a href="config.html" data-roles="owner">Config</a>
+    </nav>
+
+    <main class="container">
+      <div class="section-box">
+        <h2><span class="material-icons">add_card</span> Upload New</h2>
+        <div class="form-row">
+          <div class="form-group"><label>Name</label><input type="text" id="cName"></div>
+          <div class="form-group"><label>Category</label>
+            <select id="cCat">
+              <option value="newly">Newly Updated</option>
+              <option value="hot">Hot</option>
+              <option value="neutral">Neutral</option>
+              <option value="cold">Cold</option>
+              <option value="vip">VIP</option>
+              <option value="bonus">Bonus</option>
+              <option value="disappearing">Disappearing</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Image URL</label><input type="text" id="cImg"></div>
+        <div class="form-row">
+          <div class="form-group"><label>Price (₦)</label><input type="number" id="cPrice"></div>
+          <div class="form-group"><label>Coin Fee</label><input type="number" id="cCoin" value="20"></div>
+        </div>
+        <button class="btn-primary" onclick="saveCard()">Publish Card</button>
+      </div>
+
+      <div class="section-box">
+        <h2><span class="material-icons">list</span> Existing Cards</h2>
+        <table>
+          <thead><tr><th>Name</th><th>Cat</th><th>Action</th></tr></thead>
+          <tbody id="cardsTable"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <nav class="mobile-nav">
+      <a href="index.html"><span class="material-icons">dashboard</span>Home</a>
+      <a href="money.html"><span class="material-icons">account_balance</span>Money</a>
+      <a href="withdrawals.html"><span class="material-icons">payments</span>Payouts</a>
+      <a href="upload-card.html" class="active"><span class="material-icons">add_card</span>Cards</a>
+      <a href="users.html" data-roles="owner"><span class="material-icons">people</span>Users</a>
+    </nav>
+  </div>
+
+  <script src="admin.js"></script>
+  <script>
+    window.loadPageData = async function() {
+      const { data } = await sbClient.from('cards').select('*').order('created_at', { ascending: false });
+      document.getElementById('cardsTable').innerHTML = (data || []).map(c => `
+        <tr>
+          <td>${escapeHTML(c.name)}</td>
+          <td><span class="badge ${c.status || 'pending'}">${c.category}</span></td>
+          <td><button class="btn-sm reject" onclick="delCard('${c.id}')">Del</button></td>
+        </tr>
+      `).join('');
+    };
+
+    async function saveCard() {
+      const name = document.getElementById('cName').value.trim();
+      const price = parseFloat(document.getElementById('cPrice').value);
+      const cat = document.getElementById('cCat').value;
+      const coinFee = parseInt(document.getElementById('cCoin').value) || 20;
+
+      if (!name || !price) return showToast('Name and Price required', 'error');
+
+      const cardCode = 'PANDA-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+
+      const { error } = await sbClient.from('cards').insert([{
+        card_code: cardCode,
+        name: name,
+        category: cat,
+        image_url: document.getElementById('cImg').value,
+        original_price: price,
+        current_price: price,
+        floor_price: price,
+        ceiling_price: price * 10,
+        coin_fee_newly: coinFee,
+        coin_fee_cold: coinFee,
+        coin_fee_neutral: coinFee,
+        coin_fee_hot: coinFee,
+        status: ['vip', 'bonus', 'disappearing'].includes(cat) ? 'neutral' : cat,
+        is_vip: cat === 'vip',
+        is_bonus: cat === 'bonus',
+        is_disappearing: cat === 'disappearing',
+        is_active: true
+      }]);
+      if (error) return showToast(error.message, 'error');
+      showToast('Card Published!', 'success');
+      document.getElementById('cName').value = '';
+      document.getElementById('cImg').value = '';
+      document.getElementById('cPrice').value = '';
+      loadPageData();
+    }
+
+    async function delCard(id) {
+      if (!confirm('Delete card?')) return;
+      const { error } = await sbClient.from('cards').delete().eq('id', id);
+      if (error) return showToast(error.message, 'error');
+      showToast('Card deleted', 'success');
+      loadPageData();
+    }
+    window.saveCard = saveCard;
+    window.delCard = delCard;
+  </script>
+</body>
+</html>

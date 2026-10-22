@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Users</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <img src="https://i.imgur.com/9aLmHyS.png">
+      <h1>Panda<span>Admin</span></h1>
+      <input type="email" id="adminEmail" value="solforeyx@gmail.com">
+      <input type="password" id="adminPassword" placeholder="Password">
+      <button class="btn-primary" onclick="adminLogin()">Login</button>
+    </div>
+  </div>
+
+  <div id="adminDashboard" class="app-layout hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="back-btn" onclick="goToDashboard()"><span class="material-icons">chevron_left</span></button>
+        <h1>Users</h1>
+      </div>
+      <div class="topbar-right">
+        <span class="user-email current-admin-email"></span>
+        <button class="btn-logout" onclick="adminLogout()">Logout</button>
+      </div>
+    </header>
+
+    <nav class="desktop-nav">
+      <a href="index.html" data-roles="owner,staff">Overview</a>
+      <a href="money.html" data-roles="owner,staff">Treasury</a>
+      <a href="withdrawals.html" data-roles="owner,staff">Withdrawals</a>
+      <a href="upload-card.html" data-roles="owner,staff">Cards</a>
+      <a href="users.html" class="active" data-roles="owner">Users</a>
+      <a href="announcements.html" data-roles="owner">News</a>
+      <a href="config.html" data-roles="owner">Config</a>
+    </nav>
+
+    <main class="container">
+      <div class="section-box">
+        <input type="text" id="searchInput" placeholder="Search by name, email or username..." onkeyup="filterUsers()" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:white; margin-bottom:12px; outline:none;">
+        <table>
+          <thead><tr><th>User</th><th>Stage</th><th>Earnings</th><th>Action</th></tr></thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <nav class="mobile-nav">
+      <a href="index.html"><span class="material-icons">dashboard</span>Home</a>
+      <a href="money.html"><span class="material-icons">account_balance</span>Money</a>
+      <a href="withdrawals.html"><span class="material-icons">payments</span>Payouts</a>
+      <a href="upload-card.html"><span class="material-icons">add_card</span>Cards</a>
+      <a href="users.html" class="active" data-roles="owner"><span class="material-icons">people</span>Users</a>
+    </nav>
+  </div>
+
+  <div class="modal-overlay" id="userModal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="document.getElementById('userModal').classList.remove('open')">&times;</button>
+      <h2 id="muName" class="text-gold mb-4" style="font-size:16px;">User</h2>
+      <input type="hidden" id="muId">
+      <div class="form-row">
+        <div class="form-group"><label>Username</label><input type="text" id="muUsername"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="muPhone"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Deposit (₦)</label><input type="number" id="muDeposit"></div>
+        <div class="form-group"><label>Earnings (₦)</label><input type="number" id="muEarnings"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Coins (PC)</label><input type="number" id="muCoins"></div>
+        <div class="form-group"><label>DP</label><input type="number" id="muDp"></div>
+      </div>
+      <button class="btn-primary" onclick="saveUser()">Save Changes</button>
+      <button class="btn-logout" style="width:100%; margin-top:8px; color:var(--red); border-color:var(--red);" id="btnBan" onclick="toggleBan()">Ban User</button>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+  <script>
+    let allUsers = [];
+
+    window.loadPageData = async function() {
+      const { data } = await sbClient.from('users').select('*').order('created_at', { ascending: false });
+      allUsers = data || [];
+      renderUsers(allUsers);
+    };
+
+    function renderUsers(users) {
+      document.getElementById('usersTable').innerHTML = users.map(u => `
+        <tr>
+          <td>
+            <div style="font-weight:600;">${escapeHTML(u.full_name || 'N/A')}</div>
+            <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(u.email)}</div>
+          </td>
+          <td>Stage ${u.stage || 1}</td>
+          <td class="text-gold">${formatMoney(u.earnings_balance)}</td>
+          <td><button class="btn-sm view" onclick="openUser('${u.id}')">Manage</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      renderUsers(allUsers.filter(u =>
+        (u.full_name || '').toLowerCase().includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.username || '').toLowerCase().includes(q)
+      ));
+    }
+
+    function openUser(id) {
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+      document.getElementById('muId').value = u.id;
+      document.getElementById('muName').textContent = u.full_name;
+      document.getElementById('muUsername').value = u.username || '';
+      document.getElementById('muPhone').value = u.phone || '';
+      document.getElementById('muDeposit').value = u.deposit_balance || 0;
+      document.getElementById('muEarnings').value = u.earnings_balance || 0;
+      document.getElementById('muCoins').value = u.coins || 0;
+      document.getElementById('muDp').value = u.diamond_points || 0;
+
+      const btn = document.getElementById('btnBan');
+      btn.textContent = u.is_banned ? 'Unban User' : 'Ban User';
+      btn.style.color = u.is_banned ? 'var(--green)' : 'var(--red)';
+      btn.style.borderColor = u.is_banned ? 'var(--green)' : 'var(--red)';
+
+      document.getElementById('userModal').classList.add('open');
+    }
+
+    async function saveUser() {
+      const id = document.getElementById('muId').value;
+      const updates = {
+        username: document.getElementById('muUsername').value,
+        phone: document.getElementById('muPhone').value,
+        deposit_balance: parseFloat(document.getElementById('muDeposit').value) || 0,
+        earnings_balance: parseFloat(document.getElementById('muEarnings').value) || 0,
+        coins: parseInt(document.getElementById('muCoins').value) || 0,
+        diamond_points: parseInt(document.getElementById('muDp').value) || 0
+      };
+      const { error } = await sbClient.from('users').update(updates).eq('id', id);
+      if (error) return showToast(error.message, 'error');
+      showToast('User updated', 'success');
+      document.getElementById('userModal').classList.remove('open');
+      loadPageData();
+    }
+
+    async function toggleBan() {
+      const id = document.getElementById('muId').value;
+      const u = allUsers.find(x => x.id === id);
+      if (!u) return;
+      const { error } = await sbClient.from('users').update({ is_banned: !u.is_banned }).eq('id', id);
+      if (error) return showToast(error.message, 'error');
+      showToast(!u.is_banned ? 'User Banned' : 'User Unbanned', 'success');
+      document.getElementById('userModal').classList.remove('open');
+      loadPageData();
+    }
+
+    window.filterUsers = filterUsers;
+    window.openUser = openUser;
+    window.saveUser = saveUser;
+    window.toggleBan = toggleBan;
+  </script>
+</body>
+</html>

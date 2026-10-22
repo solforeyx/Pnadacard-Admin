@@ -82,8 +82,7 @@ h2 {
     margin: 12px auto;
 }
 
-button,
-.download-button {
+button {
     border: 0;
     border-radius: 9px;
     padding: 12px 16px;
@@ -102,10 +101,6 @@ button:disabled {
 .secondary {
     background: var(--panel2);
     border: 1px solid var(--border);
-}
-
-.danger-button {
-    background: #8d3048;
 }
 
 .controls {
@@ -315,7 +310,7 @@ button:disabled {
         <h2>1. Select Your PDF</h2>
 
         <div class="upload-area">
-            <p>Select the Panda Card PDF containing your 40 card images.</p>
+            <p>Select the Panda Card PDF containing your card images.</p>
             <input type="file" id="pdfInput" accept="application/pdf,.pdf">
             <div>
                 <button id="extractButton" disabled>Extract PDF Pages</button>
@@ -333,9 +328,8 @@ button:disabled {
         <h2>2. Upload and Export</h2>
 
         <div class="note">
-            Review each card's name, description, category and price before uploading.
-            Uploaded images will be saved using the public URLs returned by your upload function.
-            Keep this page open while uploads are running.
+            Review card names, descriptions, categories and prices before uploading.
+            Uploaded images use the public URLs returned by your upload function.
         </div>
 
         <div class="controls">
@@ -369,9 +363,8 @@ button:disabled {
     <section class="panel">
         <h2>3. Card Preview and Metadata</h2>
         <p class="note">
-            The PDF pages are processed in their original order. You can edit card information
-            before uploading. Only successfully uploaded cards with public image URLs are included
-            in the exported JSON.
+            PDF pages remain in their original order. Edit any card information before uploading.
+            Only successfully uploaded cards with public image URLs are included in the exported JSON.
         </p>
         <div id="cardGrid" class="card-grid"></div>
     </section>
@@ -386,10 +379,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 /*
 =========================================================
-CLOUDFLARE R2 UPLOAD FUNCTION
+CLOUDFLARE R2 IMAGE UPLOAD
 =========================================================
-Uses your Supabase Edge Function to request a signed upload URL.
-The returned publicUrl is saved in the final JSON.
 */
 
 async function uploadImageToR2(file) {
@@ -416,12 +407,16 @@ async function uploadImageToR2(file) {
 
     if (!res.ok) {
         throw new Error(
-            data.error || data.message || "Could not generate an R2 upload URL. HTTP " + res.status
+            data.error || data.message ||
+            "Could not generate upload URL. HTTP " + res.status
         );
     }
 
     if (!data.uploadUrl) {
-        throw new Error(data.error || data.message || "The server did not return uploadUrl.");
+        throw new Error(
+            data.error || data.message ||
+            "The server did not return uploadUrl."
+        );
     }
 
     const putRes = await fetch(data.uploadUrl, {
@@ -433,11 +428,13 @@ async function uploadImageToR2(file) {
     });
 
     if (!putRes.ok) {
-        throw new Error("R2 image upload failed. HTTP " + putRes.status);
+        throw new Error("R2 upload failed. HTTP " + putRes.status);
     }
 
     if (!data.publicUrl) {
-        throw new Error("Upload succeeded, but the server did not return publicUrl.");
+        throw new Error(
+            "Upload succeeded, but the server did not return publicUrl."
+        );
     }
 
     return data.publicUrl;
@@ -445,15 +442,8 @@ async function uploadImageToR2(file) {
 
 /*
 =========================================================
-CARD METADATA
+ALL 40 PANDA CARD METADATA
 =========================================================
-VIP: 5 cards
-Disappearing: 5 cards
-Bonus: 5 cards
-Newly: 25 cards
-
-Newly prices: five cards each at ₦500, ₦1,000, ₦1,500,
-₦2,000 and ₦2,500.
 */
 
 const metadata = {
@@ -463,25 +453,28 @@ const metadata = {
         category: "vip",
         price: 7500
     },
+
     2: {
         name: "Panda Bought an Oversized Cap",
         description: "Panda tries on an oversized tan cap that almost covers his face.",
         category: "newly",
         price: 500
     },
+
     3: {
-        name: "Panda Is Choosing a New Phone",
-        description: "Panda explores the Apple Store while deciding which phone to buy.",
+        name: "Panda Bought a Belt",
+        description: "Panda buys a belt because his oversized trousers do not fit properly.",
         category: "newly",
         price: 500
     },
+
     4: {
-        name: "Panda Is in Danger",
-        description: "Panda runs through the city at night while holding his phone and trying to escape.",
-        category: "disappearing",
-        price: 4500,
-        disappear_day: 4
+        name: "Panda Stole an iPhone",
+        description: "Panda steals an iPhone from the store and runs away through the city at night.",
+        category: "newly",
+        price: 500
     },
+
     5: {
         name: "Panda Escapes a Giant Bear",
         description: "Panda runs through the forest as a large bear chases him.",
@@ -489,103 +482,120 @@ const metadata = {
         price: 0,
         bonus_referral_threshold: 8
     },
+
     6: {
         name: "Panda Finally Comes Home",
         description: "Panda arrives at the doorway beneath a welcome-home sign.",
         category: "vip",
         price: 8500
     },
+
     7: {
-        name: "Panda Arrives at the Airport",
-        description: "Panda stands at the airport with his suitcase and a plane in the background.",
+        name: "Panda Is Going on a Trip",
+        description: "Panda prepares for a trip with his suitcase at the airport and a plane in the background.",
         category: "newly",
         price: 500
     },
+
     8: {
         name: "Panda Cannot Sleep at Night",
         description: "Panda sits sadly on his bed at night, surrounded by papers and his phone.",
         category: "newly",
         price: 500
     },
+
     9: {
-        name: "Panda Enjoys a Restaurant Meal",
-        description: "Panda sits in a restaurant enjoying food while a television plays in the background.",
+        name: "Panda Gets Disappointed by His Football Team",
+        description: "Panda watches football on television but becomes disappointed by his team's performance.",
         category: "newly",
-        price: 500
+        price: 1000
     },
+
     10: {
         name: "Panda Eats at a Rustic Table",
         description: "Panda sits outdoors at a rustic wooden table and eats from a bowl.",
         category: "newly",
         price: 1000
     },
+
     11: {
-        name: "Panda Relaxes in the Countryside",
-        description: "Panda sits cross-legged outdoors in a colorful outfit in a rustic setting.",
+        name: "Panda Has No Job and No Event in Town",
+        description: "Panda is left with nothing to do because he has no job and there is no event in town.",
         category: "bonus",
         price: 0,
         bonus_referral_threshold: 12
     },
+
     12: {
-        name: "Panda Enjoys Another Bowl of Food",
-        description: "Panda enjoys a bowl of food at an outdoor wooden table.",
+        name: "Panda Takes the Last Can of Drink",
+        description: "Panda takes the last can of drink, leaving no drinks remaining.",
         category: "newly",
         price: 1000
     },
+
     13: {
         name: "Panda Cries Over His Meal",
         description: "Panda looks upset while sitting at a rustic kitchen table with a bowl and utensils.",
         category: "newly",
         price: 1000
     },
+
     14: {
         name: "Panda Buys Data but Gets No Network",
         description: "Panda sits at a table with his phone and discovers that his purchased data has no network.",
         category: "newly",
         price: 1000
     },
+
     15: {
-        name: "Panda Tries to Win the Game",
-        description: "Panda holds a phone with a red screen beside a board marked WIN.",
+        name: "Panda Gets an Offer from Airtel",
+        description: "Panda receives an offer from Airtel while using his phone beside a board marked WIN.",
         category: "newly",
-        price: 1000
+        price: 1500
     },
+
     16: {
-        name: "Panda Hopes for Better Network Tomorrow",
-        description: "Panda sits at a table with a mug, hoping for a better network the next day.",
+        name: "Panda Wants Better Network Today",
+        description: "Panda wants a better network today, not tomorrow.",
         category: "newly",
         price: 1500
     },
+
     17: {
-        name: "Panda Shops for Another iPhone",
-        description: "Panda visits the Apple Store in a light hoodie and holds up a phone.",
+        name: "Panda Buys a New Watch",
+        description: "Panda gets a new watch, not an iPhone.",
         category: "newly",
         price: 1500
     },
+
     18: {
-        name: "Panda Feels Sad in the Apple Store",
-        description: "Panda sits on the floor inside the Apple Store looking disappointed.",
+        name: "Panda Finds Out the Shoe Is Not His Size",
+        description: "Panda discovers that the shoe he tried on is not his size.",
         category: "newly",
         price: 1500
     },
+
     19: {
-        name: "Panda Tries on a Huge Cap",
-        description: "Panda tries on an oversized cap inside the Apple Store.",
+        name: "Panda Gets a Bag for His Guitar",
+        description: "Panda gets a bag to carry and protect his guitar.",
         category: "newly",
         price: 1500
     },
+
     20: {
         name: "Panda Fixes a Laptop",
         description: "Panda works at a desk repairing a laptop, with tools and a mug nearby.",
         category: "vip",
         price: 9500
     },
+
     21: {
         name: "Panda Sweeps the Floor",
         description: "Panda sweeps the floor, but the dust seems to return quickly.",
         category: "newly",
-        price: 1500
+        price: 2000
     },
+
     22: {
         name: "Panda Goes to School",
         description: "Panda walks toward school in the early morning sunlight.",
@@ -593,32 +603,36 @@ const metadata = {
         price: 0,
         bonus_referral_threshold: 6
     },
+
     23: {
         name: "Panda Takes a Break in the Park",
         description: "Panda sits on a park bench using his smartphone with his backpack beside him.",
         category: "newly",
         price: 2000
     },
+
     24: {
-        name: "Panda Disappears in the Apple Store",
-        description: "Panda wears a black hat and sunglasses as mysterious magical energy swirls around him.",
-        category: "disappearing",
-        price: 5000,
-        disappear_day: 3
+        name: "The Magician in the Store",
+        description: "A mysterious magician appears in the store, surrounded by magical energy.",
+        category: "newly",
+        price: 2000
     },
+
     25: {
         name: "Panda Is Swept Away by Magic",
         description: "Panda runs through the Apple Store as mysterious magical energy surrounds him.",
         category: "disappearing",
-        price: 5500,
+        price: 4500,
         disappear_day: 1
     },
+
     26: {
         name: "Panda Runs Through the Apple Store",
         description: "Panda runs through the Apple Store while another panda appears in the background.",
         category: "newly",
         price: 2000
     },
+
     27: {
         name: "Panda Vanishes into the Night",
         description: "Panda stands in a dark outdoor scene surrounded by mysterious mist and smoke.",
@@ -626,6 +640,7 @@ const metadata = {
         price: 5000,
         disappear_day: 5
     },
+
     28: {
         name: "Panda Disappears in the Moonlit Forest",
         description: "Panda is surrounded by magical mist in a moonlit forest.",
@@ -633,67 +648,78 @@ const metadata = {
         price: 6000,
         disappear_day: 2
     },
+
     29: {
-        name: "Panda Escapes the Apple Store Chaos",
-        description: "Panda runs through the Apple Store amid flying confetti and carries shopping bags.",
-        category: "newly",
-        price: 2000
+        name: "Panda Destroyed the Store",
+        description: "Panda destroys the store, leaving the place in chaos.",
+        category: "disappearing",
+        price: 5500,
+        disappear_day: 3
     },
+
     30: {
         name: "Panda Searches the Store in Disguise",
         description: "Panda wears a black outfit, cap and sunglasses inside the Apple Store.",
         category: "newly",
-        price: 2000
+        price: 2500
     },
+
     31: {
         name: "Panda Watches the Sunset",
         description: "Panda sits by the waterfront and looks toward the horizon at sunset.",
         category: "newly",
-        price: 2000
+        price: 2500
     },
+
     32: {
         name: "Panda Works in a Dry Field",
         description: "Panda wears a brown hat and rural clothing in a dry, cracked field.",
         category: "newly",
         price: 2500
     },
+
     33: {
-        name: "Panda Struggles in the Rain",
-        description: "Panda crouches in muddy ground beneath a dark, stormy sky.",
+        name: "Panda Gains Power on the Battlefield",
+        description: "Panda gains extraordinary power while fighting on the battlefield.",
         category: "newly",
         price: 2500
     },
+
     34: {
         name: "Panda Fixes a Broken Phone",
         description: "Panda repairs a phone at a workbench with tools and an advertisement poster nearby.",
         category: "vip",
         price: 8500
     },
+
     35: {
         name: "Panda Attends a VIP Event",
         description: "Panda dresses elegantly for an exclusive event surrounded by VIP signs.",
-        category: "vip",
-        price: 10000
+        category: "newly",
+        price: 2500
     },
+
     36: {
         name: "Panda Mops the Floor",
         description: "Panda carefully mops the floor to clean the room.",
         category: "newly",
-        price: 2500
+        price: 3000
     },
+
     37: {
         name: "Panda Arranges His Room",
         description: "Panda organizes the room and arranges items on the shelves.",
         category: "newly",
-        price: 2500
+        price: 3500
     },
+
     38: {
-        name: "Panda Spends Time with His Family",
-        description: "Panda enjoys a cozy moment at home with two panda children and an adult panda.",
-        category: "bonus",
-        price: 0,
-        bonus_referral_threshold: 15
+        name: "Panda Is Back Home",
+        description: "Panda returns home after being away.",
+        category: "vip",
+        price: 10000
     },
+
     39: {
         name: "Panda Visits the Mosque",
         description: "Panda wears a traditional white outfit in front of a mosque and Islamic architecture.",
@@ -701,13 +727,21 @@ const metadata = {
         price: 0,
         bonus_referral_threshold: 10
     },
+
     40: {
         name: "Panda Visits the Church",
         description: "Panda wears a white outfit while standing in front of a church.",
-        category: "newly",
-        price: 2500
+        category: "bonus",
+        price: 0,
+        bonus_referral_threshold: 15
     }
 };
+
+/*
+=========================================================
+APPLICATION LOGIC
+=========================================================
+*/
 
 let cards = [];
 let pdfDocument = null;
@@ -722,18 +756,17 @@ function slugify(text) {
         .replace(/^-|-$/g, "");
 }
 
-function money(value) {
-    return "₦" + Number(value).toLocaleString("en-NG");
-}
-
 function setProgress(id, percent) {
-    $(id).style.width = Math.max(0, Math.min(100, percent)) + "%";
+    $(id).style.width =
+        Math.max(0, Math.min(100, percent)) + "%";
 }
 
 function updateStats() {
     $("totalCount").textContent = cards.length;
+
     $("uploadedCount").textContent =
         cards.filter(card => card.image_url).length;
+
     $("failedCount").textContent =
         cards.filter(card => card.uploadStatus === "error").length;
 
@@ -745,7 +778,8 @@ function updateStats() {
         !cards.some(card => card.uploadStatus === "error");
 
     $("uploadButton").disabled =
-        isUploading || cards.length === 0 ||
+        isUploading ||
+        cards.length === 0 ||
         cards.every(card => card.image_url);
 }
 
@@ -779,9 +813,16 @@ async function extractPDF() {
     $("uploadButton").disabled = true;
     $("pdfStatus").textContent = "Reading PDF...";
 
+    cards.forEach(card => {
+        if (card.previewUrl) {
+            URL.revokeObjectURL(card.previewUrl);
+        }
+    });
+
     $("cardGrid").innerHTML = "";
     cards = [];
     updateStats();
+    setProgress("extractProgress", 0);
 
     try {
         const bytes = await file.arrayBuffer();
@@ -793,25 +834,21 @@ async function extractPDF() {
         const totalPages = pdfDocument.numPages;
 
         $("pdfStatus").textContent =
-            "PDF loaded successfully. Extracting " + totalPages + " pages...";
+            "PDF loaded. Extracting " + totalPages + " pages...";
 
         for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
             const page = await pdfDocument.getPage(pageNumber);
-
             const baseViewport = page.getViewport({ scale: 1 });
 
-            const targetSize = 1200;
             const scale = Math.min(
-                2.0,
-                targetSize / Math.max(baseViewport.width, baseViewport.height)
+                2,
+                1200 / Math.max(baseViewport.width, baseViewport.height)
             );
 
             const viewport = page.getViewport({ scale });
 
             const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d", {
-                alpha: false
-            });
+            const context = canvas.getContext("2d", { alpha: false });
 
             canvas.width = Math.ceil(viewport.width);
             canvas.height = Math.ceil(viewport.height);
@@ -839,8 +876,8 @@ async function extractPDF() {
             };
 
             const filename =
-                String(pageNumber).padStart(3, "0") + "-" +
-                slugify(details.name) + ".jpg";
+                String(pageNumber).padStart(3, "0") +
+                "-" + slugify(details.name) + ".jpg";
 
             const imageFile = new File([blob], filename, {
                 type: "image/jpeg"
@@ -852,14 +889,17 @@ async function extractPDF() {
                 description: details.description,
                 category: details.category,
                 price: details.price,
+
                 disappear_day:
                     details.category === "disappearing"
                         ? details.disappear_day
                         : null,
+
                 bonus_referral_threshold:
                     details.category === "bonus"
                         ? details.bonus_referral_threshold
                         : null,
+
                 imageFile: imageFile,
                 previewUrl: URL.createObjectURL(blob),
                 image_url: "",
@@ -885,7 +925,8 @@ async function extractPDF() {
         updateStats();
 
         $("pdfStatus").textContent =
-            "Finished extracting " + cards.length + " pages. Review the cards below.";
+            "Finished extracting " + cards.length +
+            " pages. Review the cards below.";
 
         $("uploadStatus").textContent =
             "Ready to upload " + cards.length + " cards to Cloudflare R2.";
@@ -907,7 +948,7 @@ function renderCards() {
     const grid = $("cardGrid");
     grid.innerHTML = "";
 
-    cards.forEach((card, index) => {
+    cards.forEach(card => {
         const article = document.createElement("article");
         article.className = "card";
 
@@ -935,8 +976,10 @@ function renderCards() {
 
         const nameInput = document.createElement("input");
         nameInput.value = card.name;
+
         nameInput.addEventListener("change", () => {
-            card.name = nameInput.value.trim() || "Panda Card " + card.page;
+            card.name = nameInput.value.trim() ||
+                "Panda Card " + card.page;
             title.textContent = card.name;
         });
 
@@ -945,6 +988,7 @@ function renderCards() {
 
         const descInput = document.createElement("textarea");
         descInput.value = card.description;
+
         descInput.addEventListener("change", () => {
             card.description = descInput.value.trim();
         });
@@ -958,7 +1002,7 @@ function renderCards() {
             const option = document.createElement("option");
             option.value = category;
             option.textContent = category;
-            if (card.category === category) option.selected = true;
+            option.selected = card.category === category;
             categorySelect.appendChild(option);
         });
 
@@ -1020,9 +1064,12 @@ function renderCards() {
 
             dayInput.addEventListener("change", () => {
                 const value = Number(dayInput.value);
-                card.disappear_day = Math.max(0, Math.min(6,
-                    Number.isFinite(value) ? value : 0
-                ));
+
+                card.disappear_day = Math.max(
+                    0,
+                    Math.min(6, Number.isFinite(value) ? value : 0)
+                );
+
                 dayInput.value = card.disappear_day;
             });
 
@@ -1042,9 +1089,12 @@ function renderCards() {
 
             thresholdInput.addEventListener("change", () => {
                 const value = Number(thresholdInput.value);
-                card.bonus_referral_threshold = Math.max(5, Math.min(15,
-                    Number.isFinite(value) ? value : 5
-                ));
+
+                card.bonus_referral_threshold = Math.max(
+                    5,
+                    Math.min(15, Number.isFinite(value) ? value : 5)
+                );
+
                 thresholdInput.value = card.bonus_referral_threshold;
             });
 
@@ -1077,8 +1127,13 @@ function renderCards() {
     });
 }
 
-$("uploadButton").addEventListener("click", () => uploadCards(false));
+/*
+=========================================================
+UPLOAD ALL / RETRY FAILED UPLOADS
+=========================================================
+*/
 
+$("uploadButton").addEventListener("click", () => uploadCards(false));
 $("retryButton").addEventListener("click", () => uploadCards(true));
 
 async function uploadCards(retryOnly) {
@@ -1119,9 +1174,7 @@ async function uploadCards(retryOnly) {
             (completed + 1) + " of " + queue.length + ")...";
 
         try {
-            const publicUrl = await uploadImageToR2(card.imageFile);
-
-            card.image_url = publicUrl;
+            card.image_url = await uploadImageToR2(card.imageFile);
             card.uploadStatus = "success";
             succeeded++;
 
@@ -1154,7 +1207,7 @@ async function uploadCards(retryOnly) {
 
     if (failed > 0) {
         $("uploadStatus").textContent +=
-            " Tap Retry Failed Uploads to retry the failed cards.";
+            " Tap Retry Failed Uploads to retry failed cards.";
     }
 
     if (succeeded > 0) {
@@ -1165,10 +1218,8 @@ async function uploadCards(retryOnly) {
 
 /*
 =========================================================
-JSON EXPORT
+EXPORT SUCCESSFULLY UPLOADED CARDS AS JSON TXT
 =========================================================
-Only successfully uploaded cards are exported.
-Internal properties such as previewUrl and imageFile are omitted.
 */
 
 $("exportButton").addEventListener("click", exportJSON);
@@ -1220,12 +1271,6 @@ function exportJSON() {
 
     URL.revokeObjectURL(url);
 }
-
-/*
-=========================================================
-INITIALIZATION
-=========================================================
-*/
 
 updateStats();
 </script>

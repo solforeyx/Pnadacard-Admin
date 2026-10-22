@@ -2,1424 +2,1233 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panda Card — PDF Image Uploader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panda Card PDF Uploader</title>
 
 <style>
 :root {
-  color-scheme: dark;
-  --bg: #0b1020;
-  --panel: #121a2d;
-  --panel2: #18233b;
-  --line: #2a3855;
-  --text: #eef3ff;
-  --muted: #9eacc7;
-  --accent: #9d7bff;
-  --accent2: #5eead4;
-  --danger: #fb7185;
+    --bg: #0b1020;
+    --panel: #141b2e;
+    --panel2: #1c2640;
+    --text: #f4f7ff;
+    --muted: #a5b0ca;
+    --accent: #8b7cff;
+    --accent2: #4ea8ff;
+    --success: #31d69a;
+    --danger: #ff637d;
+    --border: rgba(255,255,255,.1);
 }
 
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  background: radial-gradient(ellipse at top, #172343 0%, var(--bg) 55%);
-  color: var(--text);
-  font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+header {
+    padding: 24px 16px;
+    text-align: center;
+    background: linear-gradient(135deg, #171d38, #222b4c);
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    margin: 0 0 8px;
+    font-size: 25px;
+}
+
+header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
 }
 
 main {
-  max-width: 1200px;
-  margin: auto;
-  padding: 28px 18px 60px;
-}
-
-.hero {
-  padding: 26px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: linear-gradient(135deg, #1b2850, #121a2d 65%);
-  box-shadow: 0 18px 50px #0004;
-}
-
-h1 {
-  margin: 0 0 8px;
-  font-size: clamp(27px, 5vw, 40px);
-  letter-spacing: -.04em;
-}
-
-.hero p {
-  color: var(--muted);
-  margin: 0;
-  max-width: 760px;
-}
-
-.badge {
-  display: inline-block;
-  padding: 5px 10px;
-  border-radius: 99px;
-  background: #9d7bff20;
-  color: #c9b8ff;
-  border: 1px solid #9d7bff50;
-  font-size: 12px;
-  font-weight: 700;
-  margin-bottom: 12px;
+    max-width: 1250px;
+    margin: auto;
+    padding: 18px;
 }
 
 .panel {
-  margin-top: 18px;
-  background: #111a2d;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 18px;
+    margin-bottom: 18px;
 }
 
-.panel h2 {
-  font-size: 18px;
-  margin: 0 0 12px;
+h2 {
+    margin: 0 0 14px;
+    font-size: 18px;
 }
 
-.row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
+.upload-area {
+    border: 2px dashed #58648a;
+    border-radius: 12px;
+    padding: 30px 15px;
+    text-align: center;
+    background: rgba(139,124,255,.05);
 }
 
-input[type=file] {
-  display: block;
-  width: 100%;
-  max-width: 540px;
-  padding: 12px;
-  border: 1px dashed #536486;
-  border-radius: 12px;
-  background: #0b1222;
-  color: var(--muted);
+.upload-area input {
+    width: 100%;
+    max-width: 350px;
+    margin: 12px auto;
 }
 
-button {
-  border: 0;
-  border-radius: 11px;
-  padding: 12px 17px;
-  background: var(--accent);
-  color: #100c20;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-button.secondary {
-  background: #263652;
-  color: var(--text);
-  border: 1px solid #3b4d70;
+button,
+.download-button {
+    border: 0;
+    border-radius: 9px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
 }
 
 button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
+    opacity: .45;
+    cursor: not-allowed;
 }
 
-.small {
-  color: var(--muted);
-  font-size: 13px;
+.secondary {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+}
+
+.danger-button {
+    background: #8d3048;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 14px;
 }
 
 .status {
-  margin-top: 14px;
-  color: var(--muted);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
 }
 
-.progress-wrap {
-  margin-top: 15px;
-  height: 12px;
-  background: #25314a;
-  border-radius: 99px;
-  overflow: hidden;
+.progress-track {
+    height: 12px;
+    background: #080c17;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 12px;
 }
 
-.progress {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  transition: width .2s;
+.progress-fill {
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    transition: width .2s;
 }
 
 .stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
 .stat {
-  padding: 13px;
-  background: #0c1426;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 15px 8px;
+    border-radius: 12px;
+    text-align: center;
 }
 
 .stat strong {
-  display: block;
-  font-size: 22px;
+    display: block;
+    font-size: 22px;
+    margin-bottom: 5px;
 }
 
 .stat span {
-  color: var(--muted);
-  font-size: 12px;
+    color: var(--muted);
+    font-size: 11px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
-  margin-top: 16px;
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
 }
 
 .card {
-  background: #121b2e;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  overflow: hidden;
-  min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .card img {
-  width: 100%;
-  aspect-ratio: 3/4;
-  object-fit: contain;
-  background: #070b14;
-  display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    background: #090e1c;
+    display: block;
 }
 
 .card-body {
-  padding: 13px;
+    padding: 12px;
 }
 
-.card h3 {
-  font-size: 15px;
-  margin: 0 0 5px;
+.card-body h3 {
+    font-size: 14px;
+    margin: 0 0 8px;
+    line-height: 1.4;
 }
 
-.card p {
-  font-size: 12px;
-  color: var(--muted);
-  min-height: 36px;
-  margin: 0 0 10px;
+.card-body p {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 7px 0;
 }
 
-.meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-  font-size: 12px;
+.card-body label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 10px;
 }
 
-.price {
-  font-weight: 800;
-  color: var(--accent2);
-}
-
-.tag {
-  padding: 4px 7px;
-  border-radius: 7px;
-  background: #293550;
-  color: #d9e2f7;
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: .04em;
-}
-
-.uploaded {
-  border-color: #2b8d7f;
-}
-
-.error {
-  color: var(--danger);
-}
-
-.hidden {
-  display: none;
-}
-
-@media(max-width: 620px) {
-  main {
-    padding: 14px 10px 40px;
-  }
-
-  .hero,
-  .panel {
-    padding: 16px;
-  }
-
-  .stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .row button {
+.card-body input,
+.card-body select,
+.card-body textarea {
     width: 100%;
-  }
+    margin-top: 5px;
+    padding: 9px;
+    border: 1px solid var(--border);
+    background: #0b1020;
+    color: white;
+    border-radius: 7px;
+    font: inherit;
+    font-size: 12px;
+}
+
+.card-body textarea {
+    resize: vertical;
+    min-height: 65px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: #2b3450;
+    color: #d8deff;
+    font-size: 10px;
+    margin-bottom: 8px;
+}
+
+.card-status {
+    font-size: 11px;
+    padding: 7px 0 0;
+    overflow-wrap: anywhere;
+}
+
+.card-status.success {
+    color: var(--success);
+}
+
+.card-status.error {
+    color: var(--danger);
+}
+
+.card-status.pending {
+    color: #ffd477;
+}
+
+.note {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+@media (max-width: 520px) {
+    main {
+        padding: 10px;
+    }
+
+    .panel {
+        padding: 13px;
+    }
+
+    .card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+    }
+
+    .card-body {
+        padding: 9px;
+    }
+
+    .card-body h3 {
+        font-size: 12px;
+    }
+
+    .card-body input,
+    .card-body select,
+    .card-body textarea {
+        padding: 7px;
+    }
+
+    .stats {
+        gap: 6px;
+    }
+
+    .stat strong {
+        font-size: 18px;
+    }
 }
 </style>
 </head>
 
 <body>
+
+<header>
+    <h1>🐼 Panda Card PDF Uploader</h1>
+    <p>Extract PDF pages into individual card images, upload them to Cloudflare R2, and export your card JSON.</p>
+</header>
+
 <main>
 
-  <header class="hero">
-    <span class="badge">PANDA CARD · ADMIN UTILITY</span>
+    <section class="panel">
+        <h2>1. Select Your PDF</h2>
 
-    <h1>🐼 Panda Card Uploader</h1>
+        <div class="upload-area">
+            <p>Select the Panda Card PDF containing your 40 card images.</p>
+            <input type="file" id="pdfInput" accept="application/pdf,.pdf">
+            <div>
+                <button id="extractButton" disabled>Extract PDF Pages</button>
+            </div>
+        </div>
 
-    <p>
-      Upload your Panda Card PDF, extract every page in order,
-      review your Panda card names and prices, upload images to
-      Cloudflare R2, and download the final JSON for your database.
-    </p>
-  </header>
+        <div id="pdfStatus" class="status">Choose a PDF to begin.</div>
 
-  <section class="panel">
-    <h2>1. Select Your PDF</h2>
+        <div class="progress-track">
+            <div id="extractProgress" class="progress-fill"></div>
+        </div>
+    </section>
 
-    <div class="row">
-      <input
-        id="pdfInput"
-        type="file"
-        accept="application/pdf,.pdf"
-      >
+    <section class="panel">
+        <h2>2. Upload and Export</h2>
 
-      <button id="extractBtn" disabled>
-        Extract PDF Pages
-      </button>
-    </div>
+        <div class="note">
+            Review each card's name, description, category and price before uploading.
+            Uploaded images will be saved using the public URLs returned by your upload function.
+            Keep this page open while uploads are running.
+        </div>
 
-    <p class="small">
-      Select the original 40-page Pandacard.pdf. Each PDF page is
-      matched to the corresponding metadata entry in page order.
-      The page count must match the metadata count.
-    </p>
+        <div class="controls">
+            <button id="uploadButton" disabled>Upload All Cards to R2</button>
+            <button id="exportButton" class="secondary" disabled>Download JSON TXT</button>
+            <button id="retryButton" class="secondary" disabled>Retry Failed Uploads</button>
+        </div>
+
+        <div id="uploadStatus" class="status">No cards extracted yet.</div>
+
+        <div class="progress-track">
+            <div id="uploadProgress" class="progress-fill"></div>
+        </div>
+    </section>
 
     <div class="stats">
-
-      <div class="stat">
-        <strong id="pagesStat">0 / 40</strong>
-        <span>Pages Extracted</span>
-      </div>
-
-      <div class="stat">
-        <strong id="uploadedStat">0</strong>
-        <span>Images Uploaded</span>
-      </div>
-
-      <div class="stat">
-        <strong id="failedStat">0</strong>
-        <span>Upload Failures</span>
-      </div>
-
-      <div class="stat">
-        <strong id="categoryStat">15</strong>
-        <span>Special Cards</span>
-      </div>
-
+        <div class="stat">
+            <strong id="totalCount">0</strong>
+            <span>Total Cards</span>
+        </div>
+        <div class="stat">
+            <strong id="uploadedCount">0</strong>
+            <span>Uploaded</span>
+        </div>
+        <div class="stat">
+            <strong id="failedCount">0</strong>
+            <span>Failed</span>
+        </div>
     </div>
 
-    <div class="progress-wrap">
-      <div class="progress" id="progressBar"></div>
-    </div>
-
-    <div id="status" class="status" role="status">
-      Choose your PDF to begin.
-    </div>
-  </section>
-
-  <section class="panel">
-    <h2>2. Review Your Panda Cards</h2>
-
-    <p class="small">
-      Check every image, name, description, category, and price
-      before uploading. Images are uploaded sequentially so you
-      can monitor the progress and retry failures.
-    </p>
-
-    <div class="row">
-      <button id="uploadBtn" disabled>
-        Upload All Images to R2
-      </button>
-
-      <button id="downloadBtn" class="secondary" disabled>
-        Download JSON .txt
-      </button>
-    </div>
-
-    <div id="grid" class="grid"></div>
-  </section>
+    <section class="panel">
+        <h2>3. Card Preview and Metadata</h2>
+        <p class="note">
+            The PDF pages are processed in their original order. You can edit card information
+            before uploading. Only successfully uploaded cards with public image URLs are included
+            in the exported JSON.
+        </p>
+        <div id="cardGrid" class="card-grid"></div>
+    </section>
 
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
-'use strict';
-
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-
-/*
-==========================================================
-PANDA CARD METADATA
-==========================================================
-
-IMPORTANT:
-The metadata below is assigned to PDF pages in order.
-Page 1 uses card 1, page 2 uses card 2, and so on.
-
-Categories:
-vip
-disappearing
-bonus
-newly
-
-Disappearing days:
-0 = Sunday
-1 = Monday
-2 = Tuesday
-3 = Wednesday
-4 = Thursday
-5 = Friday
-6 = Saturday
-*/
-
-
-const CARD_DATA = [
-
-  {
-    name: "Panda Bought an iPhone",
-    description: "A happy panda proudly shows off a brand-new iPhone.",
-    price: 7500,
-    category: "vip",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 1
-  },
-
-  {
-    name: "Panda Went Out in the Rain",
-    description: "Panda heads outside for a rainy-day adventure.",
-    price: 500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 2
-  },
-
-  {
-    name: "Panda Went Phone Shopping",
-    description: "Panda visits a shop to look for a new phone.",
-    price: 500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 3
-  },
-
-  {
-    name: "Panda Disappears",
-    description: "Panda vanishes in a mysterious burst of glowing energy.",
-    price: 4500,
-    category: "disappearing",
-    disappear_day: 4,
-    bonus_referral_threshold: null,
-    page: 4
-  },
-
-  {
-    name: "Panda Is in Danger",
-    description: "Panda faces a dangerous situation and must find a way out.",
-    price: 0,
-    category: "bonus",
-    disappear_day: null,
-    bonus_referral_threshold: 8,
-    page: 5
-  },
-
-  {
-    name: "Panda Welcomes You Home",
-    description: "Panda opens the door and gives everyone a warm welcome.",
-    price: 8500,
-    category: "vip",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 6
-  },
-
-  {
-    name: "Panda Is Going on a Trip",
-    description: "Panda packs a suitcase and gets ready for a journey.",
-    price: 500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 7
-  },
-
-  {
-    name: "Panda Cannot Sleep",
-    description: "Panda stays awake late at night, unable to fall asleep.",
-    price: 5000,
-    category: "disappearing",
-    disappear_day: 3,
-    bonus_referral_threshold: null,
-    page: 8
-  },
-
-  {
-    name: "Panda Went Out to Eat",
-    description: "Panda visits a restaurant to enjoy a delicious meal.",
-    price: 500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 9
-  },
-
-  {
-    name: "Panda Is Hungry",
-    description: "Panda is ready to eat and searching for something tasty.",
-    price: 500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 10
-  },
-
-  {
-    name: "Panda Tries to Be an Artist",
-    description: "Panda experiments with a creative style and artistic look.",
-    price: 0,
-    category: "bonus",
-    disappear_day: null,
-    bonus_referral_threshold: 12,
-    page: 11
-  },
-
-  {
-    name: "Panda Is Feeling Lucky",
-    description: "Panda enjoys a moment that feels full of good fortune.",
-    price: 1000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 12
-  },
-
-  {
-    name: "Panda Lost the Signal",
-    description: "Panda checks the phone but cannot find a network signal.",
-    price: 1000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 13
-  },
-
-  {
-    name: "Panda Is in Danger",
-    description: "Panda faces a sudden problem and searches for a solution.",
-    price: 1000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 14
-  },
-
-  {
-    name: "Panda Gets an Urgent Alert",
-    description: "Panda receives an urgent alert and quickly checks the phone.",
-    price: 5500,
-    category: "disappearing",
-    disappear_day: 1,
-    bonus_referral_threshold: null,
-    page: 15
-  },
-
-  {
-    name: "Panda Searches for Better Network",
-    description: "Panda tries to find a stronger and more reliable signal.",
-    price: 1000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 16
-  },
-
-  {
-    name: "Panda Bought a New Gadget",
-    description: "Panda proudly checks out a new gadget after shopping.",
-    price: 1000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 17
-  },
-
-  {
-    name: "Panda Takes a Cozy Break",
-    description: "Panda relaxes in a comfortable hoodie after a busy day.",
-    price: 1500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 18
-  },
-
-  {
-    name: "Panda Bought an Oversized Cap",
-    description: "Panda shows off a stylish outfit with an oversized cap.",
-    price: 1500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 19
-  },
-
-  {
-    name: "Panda Fixes a Laptop",
-    description: "Panda gets to work repairing a laptop.",
-    price: 9500,
-    category: "vip",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 20
-  },
-
-  {
-    name: "Panda Starts Cleaning",
-    description: "Panda grabs a broom and starts cleaning up.",
-    price: 1500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 21
-  },
-
-  {
-    name: "Panda Is Going to School",
-    description: "Panda gets ready for a new day of learning at school.",
-    price: 0,
-    category: "bonus",
-    disappear_day: null,
-    bonus_referral_threshold: 6,
-    page: 22
-  },
-
-  {
-    name: "Panda Listens to Music",
-    description: "Panda takes a break and enjoys some favourite music.",
-    price: 1500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 23
-  },
-
-  {
-    name: "Panda Disappears in a Whirlwind",
-    description: "Panda suddenly vanishes in a mysterious whirlwind.",
-    price: 5000,
-    category: "disappearing",
-    disappear_day: 5,
-    bonus_referral_threshold: null,
-    page: 24
-  },
-
-  {
-    name: "Panda Runs Through Sparkles",
-    description: "Panda races forward while sparkling lights fill the air.",
-    price: 1500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 25
-  },
-
-  {
-    name: "Panda Is Ready for an Adventure",
-    description: "Panda sets off, ready to discover something exciting.",
-    price: 2000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 26
-  },
-
-  {
-    name: "Panda Shows Off a Cool Outfit",
-    description: "Panda proudly models a fresh and fashionable outfit.",
-    price: 6000,
-    category: "disappearing",
-    disappear_day: 2,
-    bonus_referral_threshold: null,
-    page: 27
-  },
-
-  {
-    name: "Panda Has a Big Idea",
-    description: "Panda pauses to think about an exciting new idea.",
-    price: 0,
-    category: "bonus",
-    disappear_day: null,
-    bonus_referral_threshold: 15,
-    page: 28
-  },
-
-  {
-    name: "Panda Goes on a Shopping Spree",
-    description: "Panda explores the shops looking for something special.",
-    price: 2000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 29
-  },
-
-  {
-    name: "Panda Needs a Little Help",
-    description: "Panda encounters a tricky problem and looks for help.",
-    price: 2000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 30
-  },
-
-  {
-    name: "Panda Celebrates a Win",
-    description: "Panda celebrates a successful moment with excitement.",
-    price: 2000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 31
-  },
-
-  {
-    name: "Panda Finds a Surprise",
-    description: "Panda discovers something unexpected and exciting.",
-    price: 2000,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 32
-  },
-
-  {
-    name: "Panda Takes a Quick Break",
-    description: "Panda takes a short break before the next adventure.",
-    price: 2500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 33
-  },
-
-  {
-    name: "Panda Is on the Move",
-    description: "Panda hurries off to the next exciting destination.",
-    price: 8500,
-    category: "vip",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 34
-  },
-
-  {
-    name: "Panda Guards a Treasure",
-    description: "Panda protects a valuable treasure from anyone who approaches.",
-    price: 10000,
-    category: "vip",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 35
-  },
-
-  {
-    name: "Panda Has a Lucky Day",
-    description: "Panda enjoys a day filled with happy surprises.",
-    price: 2500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 36
-  },
-
-  {
-    name: "Panda Makes a New Friend",
-    description: "Panda meets someone new and shares a happy moment.",
-    price: 2500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 37
-  },
-
-  {
-    name: "Panda Gets a Brilliant Idea",
-    description: "Panda suddenly discovers a clever way to solve a problem.",
-    price: 2500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 38
-  },
-
-  {
-    name: "Panda Goes on a Secret Mission",
-    description: "Panda sets off on a mysterious mission that nobody knows about.",
-    price: 0,
-    category: "bonus",
-    disappear_day: null,
-    bonus_referral_threshold: 10,
-    page: 39
-  },
-
-  {
-    name: "Panda Ends the Day in Style",
-    description: "Panda finishes the day looking cool and satisfied.",
-    price: 2500,
-    category: "newly",
-    disappear_day: null,
-    bonus_referral_threshold: null,
-    page: 40
-  }
-
-];
-
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 /*
-==========================================================
-APPLICATION VARIABLES
-==========================================================
-*/
-
-const pdfInput = document.getElementById('pdfInput');
-const extractBtn = document.getElementById('extractBtn');
-const uploadBtn = document.getElementById('uploadBtn');
-const downloadBtn = document.getElementById('downloadBtn');
-const statusEl = document.getElementById('status');
-const grid = document.getElementById('grid');
-const progressBar = document.getElementById('progressBar');
-const pagesStat = document.getElementById('pagesStat');
-const uploadedStat = document.getElementById('uploadedStat');
-const failedStat = document.getElementById('failedStat');
-
-let extractedCards = [];
-let busy = false;
-
-const DAY_NAMES = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday'
-];
-
-
-/*
-==========================================================
-HELPER FUNCTIONS
-==========================================================
-*/
-
-function setStatus(message, isError = false) {
-  statusEl.textContent = message;
-  statusEl.classList.toggle('error', isError);
-}
-
-function safeFileSlug(value) {
-  return value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 60) || 'panda-card';
-}
-
-function formatNaira(value) {
-  return value === 0
-    ? 'FREE'
-    : '₦' + Number(value).toLocaleString('en-NG');
-}
-
-function cardExtra(card) {
-  if (card.category === 'disappearing') {
-    return 'Shuffle day: ' +
-      card.disappear_day +
-      ' (' + DAY_NAMES[card.disappear_day] + ')';
-  }
-
-  if (card.category === 'bonus') {
-    return 'Referral threshold: ' +
-      card.bonus_referral_threshold;
-  }
-
-  return '';
-}
-
-
-/*
-==========================================================
-RENDER CARD PREVIEWS
-==========================================================
-*/
-
-function renderCards() {
-  grid.innerHTML = '';
-
-  extractedCards.forEach((card, index) => {
-    const article = document.createElement('article');
-
-    article.className =
-      'card' + (card.image_url ? ' uploaded' : '');
-
-    const img = document.createElement('img');
-
-    img.alt = card.name;
-    img.src = card.previewUrl || '';
-
-    const body = document.createElement('div');
-    body.className = 'card-body';
-
-    const title = document.createElement('h3');
-
-    title.textContent =
-      String(index + 1).padStart(2, '0') +
-      '. ' + card.name;
-
-    const desc = document.createElement('p');
-    desc.textContent = card.description;
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-
-    const price = document.createElement('span');
-    price.className = 'price';
-    price.textContent = formatNaira(card.price);
-
-    const tag = document.createElement('span');
-    tag.className = 'tag';
-    tag.textContent = card.category;
-
-    meta.append(price, tag);
-    body.append(title, desc, meta);
-
-    const extraText = cardExtra(card);
-
-    if (extraText) {
-      const extra = document.createElement('p');
-
-      extra.style.marginTop = '8px';
-      extra.textContent = extraText;
-
-      body.appendChild(extra);
-    }
-
-    if (card.image_url) {
-      const uploadedMessage = document.createElement('p');
-
-      uploadedMessage.style.marginTop = '8px';
-      uploadedMessage.textContent = 'Uploaded ✓';
-
-      body.appendChild(uploadedMessage);
-    }
-
-    if (card.upload_error) {
-      const errorMessage = document.createElement('p');
-
-      errorMessage.style.marginTop = '8px';
-      errorMessage.className = 'error';
-      errorMessage.textContent =
-        'Upload failed: ' + card.upload_error;
-
-      body.appendChild(errorMessage);
-    }
-
-    article.append(img, body);
-    grid.appendChild(article);
-  });
-}
-
-
-/*
-==========================================================
-PDF FILE SELECTION
-==========================================================
-*/
-
-pdfInput.addEventListener('change', () => {
-  extractBtn.disabled =
-    !(pdfInput.files && pdfInput.files[0]) || busy;
-
-  setStatus(
-    pdfInput.files && pdfInput.files[0]
-      ? 'Ready to extract: ' + pdfInput.files[0].name
-      : 'Choose your PDF to begin.'
-  );
-});
-
-
-/*
-==========================================================
-EXTRACT PDF PAGES IN ORIGINAL ORDER
-==========================================================
-*/
-
-extractBtn.addEventListener('click', async () => {
-  if (busy || !pdfInput.files[0]) {
-    return;
-  }
-
-  busy = true;
-
-  extractBtn.disabled = true;
-  uploadBtn.disabled = true;
-  downloadBtn.disabled = true;
-
-  extractedCards.forEach(card => {
-    if (card.previewUrl) {
-      URL.revokeObjectURL(card.previewUrl);
-    }
-  });
-
-  extractedCards = [];
-  grid.innerHTML = '';
-
-  progressBar.style.width = '0%';
-  pagesStat.textContent = '0 / ' + CARD_DATA.length;
-  uploadedStat.textContent = '0';
-  failedStat.textContent = '0';
-
-  try {
-    const buffer = await pdfInput.files[0].arrayBuffer();
-
-    const pdf = await pdfjsLib.getDocument({
-      data: buffer
-    }).promise;
-
-    if (pdf.numPages !== CARD_DATA.length) {
-      throw new Error(
-        'This PDF contains ' + pdf.numPages +
-        ' pages, but the metadata contains ' +
-        CARD_DATA.length +
-        ' cards. No images were extracted. ' +
-        'Use the correct PDF or update the metadata.'
-      );
-    }
-
-    for (
-      let pageNumber = 1;
-      pageNumber <= pdf.numPages;
-      pageNumber++
-    ) {
-      setStatus(
-        'Extracting page ' +
-        pageNumber + ' of ' + pdf.numPages + '…'
-      );
-
-      const page = await pdf.getPage(pageNumber);
-
-      const viewport = page.getViewport({
-        scale: 2
-      });
-
-      const canvas = document.createElement('canvas');
-
-      const context = canvas.getContext('2d', {
-        alpha: false
-      });
-
-      canvas.width = Math.ceil(viewport.width);
-      canvas.height = Math.ceil(viewport.height);
-
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob(
-          blobResult => {
-            if (blobResult) {
-              resolve(blobResult);
-            } else {
-              reject(
-                new Error(
-                  'Could not render PDF page ' + pageNumber
-                )
-              );
-            }
-          },
-          'image/jpeg',
-          0.92
-        );
-      });
-
-      const metadata = CARD_DATA[pageNumber - 1];
-
-      const filename =
-        'cards/' +
-        String(pageNumber).padStart(3, '0') +
-        '-' +
-        safeFileSlug(metadata.name) +
-        '.jpg';
-
-      const file = new File(
-        [blob],
-        filename,
-        { type: 'image/jpeg' }
-      );
-
-      const previewUrl = URL.createObjectURL(blob);
-
-      extractedCards.push({
-        ...metadata,
-        file: file,
-        previewUrl: previewUrl,
-        image_url: null,
-        upload_error: null
-      });
-
-      pagesStat.textContent =
-        pageNumber + ' / ' + pdf.numPages;
-
-      progressBar.style.width =
-        (pageNumber / pdf.numPages * 100) + '%';
-
-      renderCards();
-
-      canvas.width = 0;
-      canvas.height = 0;
-    }
-
-    setStatus(
-      'Successfully extracted all ' +
-      extractedCards.length +
-      ' pages in order. Review the names and images, ' +
-      'then upload them to R2.'
-    );
-
-    uploadBtn.disabled = false;
-
-  } catch (error) {
-    setStatus(
-      error.message || String(error),
-      true
-    );
-
-    uploadBtn.disabled = true;
-
-  } finally {
-    busy = false;
-
-    extractBtn.disabled =
-      !(pdfInput.files && pdfInput.files[0]);
-  }
-});
-
-
-/*
-==========================================================
-CLOUDFLARE R2 IMAGE UPLOAD
-==========================================================
-
-This uses the Supabase Edge Function supplied for Panda Card.
-
-The Edge Function must return:
-{
-  "uploadUrl": "...",
-  "publicUrl": "..."
-}
+=========================================================
+CLOUDFLARE R2 UPLOAD FUNCTION
+=========================================================
+Uses your Supabase Edge Function to request a signed upload URL.
+The returned publicUrl is saved in the final JSON.
 */
 
 async function uploadImageToR2(file) {
+    const endpoint =
+        "https://dxxhlaxdudtiktplwvbq.supabase.co/functions/v1/generate-r2-upload-url";
 
-  const res = await fetch(
-    'https://dxxhlaxdudtiktplwvbq.supabase.co/functions/v1/generate-r2-upload-url',
-    {
-      method: 'POST',
+    const supabaseKey =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eGhsYXd1ZGR0aWt0cGx3dmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNDUzNzIsImV4cCI6MjEwNzkyMTM3Mn0.tSFal0bYl1jO-EMjwq_9A0KLdF0YLLqO0F7kgXeZ2aI";
 
-      headers: {
-        'Content-Type': 'application/json',
+    const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + supabaseKey,
+            "apikey": supabaseKey
+        },
+        body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type || "image/jpeg"
+        })
+    });
 
-        'Authorization':
-          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eGhsYXd1ZGR0aWt0cGx3dmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNDUzNzIsImV4cCI6MjEwNzkyMTM3Mn0.tSFal0bYl1jO-EMjwq_9A0KLdF0YLLqO0F7kgXeZ2aI',
+    const data = await res.json().catch(() => ({}));
 
-        'apikey':
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImR4eGhsYXd1ZGR0aWt0cGx3dmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNDUzNzIsImV4cCI6MjEwNzkyMTM3Mn0.tSFal0bYl1jO-EMjwq_9A0KLdF0YLLqO0F7kgXeZ2aI'
-      },
-
-      body: JSON.stringify({
-        fileName: file.name || 'card.jpg',
-        contentType: file.type || 'image/jpeg'
-      })
+    if (!res.ok) {
+        throw new Error(
+            data.error || data.message || "Could not generate an R2 upload URL. HTTP " + res.status
+        );
     }
-  );
 
-  if (!res.ok) {
-    throw new Error(
-      'Could not obtain an R2 upload URL. HTTP ' +
-      res.status
-    );
-  }
-
-  const data = await res.json();
-
-  if (!data.uploadUrl) {
-    throw new Error(
-      data.error || 'The Edge Function returned no upload URL.'
-    );
-  }
-
-  const uploadResponse = await fetch(
-    data.uploadUrl,
-    {
-      method: 'PUT',
-      body: file,
-
-      headers: {
-        'Content-Type': file.type || 'image/jpeg'
-      }
+    if (!data.uploadUrl) {
+        throw new Error(data.error || data.message || "The server did not return uploadUrl.");
     }
-  );
 
-  if (!uploadResponse.ok) {
-    throw new Error(
-      'R2 image upload failed. HTTP ' +
-      uploadResponse.status
-    );
-  }
+    const putRes = await fetch(data.uploadUrl, {
+        method: "PUT",
+        headers: {
+            "Content-Type": file.type || "image/jpeg"
+        },
+        body: file
+    });
 
-  if (!data.publicUrl) {
-    throw new Error(
-      'Image uploaded, but the Edge Function returned no public URL.'
-    );
-  }
+    if (!putRes.ok) {
+        throw new Error("R2 image upload failed. HTTP " + putRes.status);
+    }
 
-  return data.publicUrl;
+    if (!data.publicUrl) {
+        throw new Error("Upload succeeded, but the server did not return publicUrl.");
+    }
+
+    return data.publicUrl;
 }
 
-
 /*
-==========================================================
-UPLOAD ALL IMAGES
-==========================================================
+=========================================================
+CARD METADATA
+=========================================================
+VIP: 5 cards
+Disappearing: 5 cards
+Bonus: 5 cards
+Newly: 25 cards
+
+Newly prices: five cards each at ₦500, ₦1,000, ₦1,500,
+₦2,000 and ₦2,500.
 */
 
-uploadBtn.addEventListener('click', async () => {
-  if (busy || !extractedCards.length) {
-    return;
-  }
+const metadata = {
+    1: {
+        name: "Panda Bought an iPhone",
+        description: "Panda visits an Apple Store and proudly shows off his new iPhone.",
+        category: "vip",
+        price: 7500
+    },
+    2: {
+        name: "Panda Bought an Oversized Cap",
+        description: "Panda tries on an oversized tan cap that almost covers his face.",
+        category: "newly",
+        price: 500
+    },
+    3: {
+        name: "Panda Is Choosing a New Phone",
+        description: "Panda explores the Apple Store while deciding which phone to buy.",
+        category: "newly",
+        price: 500
+    },
+    4: {
+        name: "Panda Is in Danger",
+        description: "Panda runs through the city at night while holding his phone and trying to escape.",
+        category: "disappearing",
+        price: 4500,
+        disappear_day: 4
+    },
+    5: {
+        name: "Panda Escapes a Giant Bear",
+        description: "Panda runs through the forest as a large bear chases him.",
+        category: "bonus",
+        price: 0,
+        bonus_referral_threshold: 8
+    },
+    6: {
+        name: "Panda Finally Comes Home",
+        description: "Panda arrives at the doorway beneath a welcome-home sign.",
+        category: "vip",
+        price: 8500
+    },
+    7: {
+        name: "Panda Arrives at the Airport",
+        description: "Panda stands at the airport with his suitcase and a plane in the background.",
+        category: "newly",
+        price: 500
+    },
+    8: {
+        name: "Panda Cannot Sleep at Night",
+        description: "Panda sits sadly on his bed at night, surrounded by papers and his phone.",
+        category: "newly",
+        price: 500
+    },
+    9: {
+        name: "Panda Enjoys a Restaurant Meal",
+        description: "Panda sits in a restaurant enjoying food while a television plays in the background.",
+        category: "newly",
+        price: 500
+    },
+    10: {
+        name: "Panda Eats at a Rustic Table",
+        description: "Panda sits outdoors at a rustic wooden table and eats from a bowl.",
+        category: "newly",
+        price: 1000
+    },
+    11: {
+        name: "Panda Relaxes in the Countryside",
+        description: "Panda sits cross-legged outdoors in a colorful outfit in a rustic setting.",
+        category: "bonus",
+        price: 0,
+        bonus_referral_threshold: 12
+    },
+    12: {
+        name: "Panda Enjoys Another Bowl of Food",
+        description: "Panda enjoys a bowl of food at an outdoor wooden table.",
+        category: "newly",
+        price: 1000
+    },
+    13: {
+        name: "Panda Cries Over His Meal",
+        description: "Panda looks upset while sitting at a rustic kitchen table with a bowl and utensils.",
+        category: "newly",
+        price: 1000
+    },
+    14: {
+        name: "Panda Buys Data but Gets No Network",
+        description: "Panda sits at a table with his phone and discovers that his purchased data has no network.",
+        category: "newly",
+        price: 1000
+    },
+    15: {
+        name: "Panda Tries to Win the Game",
+        description: "Panda holds a phone with a red screen beside a board marked WIN.",
+        category: "newly",
+        price: 1000
+    },
+    16: {
+        name: "Panda Hopes for Better Network Tomorrow",
+        description: "Panda sits at a table with a mug, hoping for a better network the next day.",
+        category: "newly",
+        price: 1500
+    },
+    17: {
+        name: "Panda Shops for Another iPhone",
+        description: "Panda visits the Apple Store in a light hoodie and holds up a phone.",
+        category: "newly",
+        price: 1500
+    },
+    18: {
+        name: "Panda Feels Sad in the Apple Store",
+        description: "Panda sits on the floor inside the Apple Store looking disappointed.",
+        category: "newly",
+        price: 1500
+    },
+    19: {
+        name: "Panda Tries on a Huge Cap",
+        description: "Panda tries on an oversized cap inside the Apple Store.",
+        category: "newly",
+        price: 1500
+    },
+    20: {
+        name: "Panda Fixes a Laptop",
+        description: "Panda works at a desk repairing a laptop, with tools and a mug nearby.",
+        category: "vip",
+        price: 9500
+    },
+    21: {
+        name: "Panda Sweeps the Floor",
+        description: "Panda sweeps the floor, but the dust seems to return quickly.",
+        category: "newly",
+        price: 1500
+    },
+    22: {
+        name: "Panda Goes to School",
+        description: "Panda walks toward school in the early morning sunlight.",
+        category: "bonus",
+        price: 0,
+        bonus_referral_threshold: 6
+    },
+    23: {
+        name: "Panda Takes a Break in the Park",
+        description: "Panda sits on a park bench using his smartphone with his backpack beside him.",
+        category: "newly",
+        price: 2000
+    },
+    24: {
+        name: "Panda Disappears in the Apple Store",
+        description: "Panda wears a black hat and sunglasses as mysterious magical energy swirls around him.",
+        category: "disappearing",
+        price: 5000,
+        disappear_day: 3
+    },
+    25: {
+        name: "Panda Is Swept Away by Magic",
+        description: "Panda runs through the Apple Store as mysterious magical energy surrounds him.",
+        category: "disappearing",
+        price: 5500,
+        disappear_day: 1
+    },
+    26: {
+        name: "Panda Runs Through the Apple Store",
+        description: "Panda runs through the Apple Store while another panda appears in the background.",
+        category: "newly",
+        price: 2000
+    },
+    27: {
+        name: "Panda Vanishes into the Night",
+        description: "Panda stands in a dark outdoor scene surrounded by mysterious mist and smoke.",
+        category: "disappearing",
+        price: 5000,
+        disappear_day: 5
+    },
+    28: {
+        name: "Panda Disappears in the Moonlit Forest",
+        description: "Panda is surrounded by magical mist in a moonlit forest.",
+        category: "disappearing",
+        price: 6000,
+        disappear_day: 2
+    },
+    29: {
+        name: "Panda Escapes the Apple Store Chaos",
+        description: "Panda runs through the Apple Store amid flying confetti and carries shopping bags.",
+        category: "newly",
+        price: 2000
+    },
+    30: {
+        name: "Panda Searches the Store in Disguise",
+        description: "Panda wears a black outfit, cap and sunglasses inside the Apple Store.",
+        category: "newly",
+        price: 2000
+    },
+    31: {
+        name: "Panda Watches the Sunset",
+        description: "Panda sits by the waterfront and looks toward the horizon at sunset.",
+        category: "newly",
+        price: 2000
+    },
+    32: {
+        name: "Panda Works in a Dry Field",
+        description: "Panda wears a brown hat and rural clothing in a dry, cracked field.",
+        category: "newly",
+        price: 2500
+    },
+    33: {
+        name: "Panda Struggles in the Rain",
+        description: "Panda crouches in muddy ground beneath a dark, stormy sky.",
+        category: "newly",
+        price: 2500
+    },
+    34: {
+        name: "Panda Fixes a Broken Phone",
+        description: "Panda repairs a phone at a workbench with tools and an advertisement poster nearby.",
+        category: "vip",
+        price: 8500
+    },
+    35: {
+        name: "Panda Attends a VIP Event",
+        description: "Panda dresses elegantly for an exclusive event surrounded by VIP signs.",
+        category: "vip",
+        price: 10000
+    },
+    36: {
+        name: "Panda Mops the Floor",
+        description: "Panda carefully mops the floor to clean the room.",
+        category: "newly",
+        price: 2500
+    },
+    37: {
+        name: "Panda Arranges His Room",
+        description: "Panda organizes the room and arranges items on the shelves.",
+        category: "newly",
+        price: 2500
+    },
+    38: {
+        name: "Panda Spends Time with His Family",
+        description: "Panda enjoys a cozy moment at home with two panda children and an adult panda.",
+        category: "bonus",
+        price: 0,
+        bonus_referral_threshold: 15
+    },
+    39: {
+        name: "Panda Visits the Mosque",
+        description: "Panda wears a traditional white outfit in front of a mosque and Islamic architecture.",
+        category: "bonus",
+        price: 0,
+        bonus_referral_threshold: 10
+    },
+    40: {
+        name: "Panda Visits the Church",
+        description: "Panda wears a white outfit while standing in front of a church.",
+        category: "newly",
+        price: 2500
+    }
+};
 
-  busy = true;
+let cards = [];
+let pdfDocument = null;
+let isUploading = false;
 
-  uploadBtn.disabled = true;
-  extractBtn.disabled = true;
-  downloadBtn.disabled = true;
+const $ = id => document.getElementById(id);
 
-  let uploaded = extractedCards.filter(
-    card => Boolean(card.image_url)
-  ).length;
+function slugify(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+}
 
-  let failed = 0;
+function money(value) {
+    return "₦" + Number(value).toLocaleString("en-NG");
+}
 
-  const total = extractedCards.length;
+function setProgress(id, percent) {
+    $(id).style.width = Math.max(0, Math.min(100, percent)) + "%";
+}
 
-  progressBar.style.width = '0%';
+function updateStats() {
+    $("totalCount").textContent = cards.length;
+    $("uploadedCount").textContent =
+        cards.filter(card => card.image_url).length;
+    $("failedCount").textContent =
+        cards.filter(card => card.uploadStatus === "error").length;
 
-  for (let i = 0; i < total; i++) {
-    const card = extractedCards[i];
+    $("exportButton").disabled =
+        !cards.some(card => card.image_url);
 
-    if (card.image_url) {
-      progressBar.style.width =
-        ((i + 1) / total * 100) + '%';
+    $("retryButton").disabled =
+        isUploading ||
+        !cards.some(card => card.uploadStatus === "error");
 
-      continue;
+    $("uploadButton").disabled =
+        isUploading || cards.length === 0 ||
+        cards.every(card => card.image_url);
+}
+
+$("pdfInput").addEventListener("change", () => {
+    const file = $("pdfInput").files[0];
+
+    $("extractButton").disabled = !file;
+
+    $("pdfStatus").textContent = file
+        ? "Selected: " + file.name + " (" +
+          (file.size / (1024 * 1024)).toFixed(2) + " MB)"
+        : "Choose a PDF to begin.";
+});
+
+$("extractButton").addEventListener("click", extractPDF);
+
+async function extractPDF() {
+    const file = $("pdfInput").files[0];
+
+    if (!file) {
+        alert("Please select a PDF first.");
+        return;
     }
 
-    card.upload_error = null;
+    if (isUploading) {
+        alert("Wait for the current upload to finish.");
+        return;
+    }
+
+    $("extractButton").disabled = true;
+    $("uploadButton").disabled = true;
+    $("pdfStatus").textContent = "Reading PDF...";
+
+    $("cardGrid").innerHTML = "";
+    cards = [];
+    updateStats();
 
     try {
-      setStatus(
-        'Uploading ' + (i + 1) +
-        ' of ' + total + ': ' +
-        card.name + '…'
-      );
+        const bytes = await file.arrayBuffer();
 
-      const publicUrl = await uploadImageToR2(
-        card.file
-      );
+        pdfDocument = await pdfjsLib.getDocument({
+            data: new Uint8Array(bytes)
+        }).promise;
 
-      card.image_url = publicUrl;
-      card.upload_error = null;
+        const totalPages = pdfDocument.numPages;
 
-      uploaded++;
+        $("pdfStatus").textContent =
+            "PDF loaded successfully. Extracting " + totalPages + " pages...";
+
+        for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+            const page = await pdfDocument.getPage(pageNumber);
+
+            const baseViewport = page.getViewport({ scale: 1 });
+
+            const targetSize = 1200;
+            const scale = Math.min(
+                2.0,
+                targetSize / Math.max(baseViewport.width, baseViewport.height)
+            );
+
+            const viewport = page.getViewport({ scale });
+
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d", {
+                alpha: false
+            });
+
+            canvas.width = Math.ceil(viewport.width);
+            canvas.height = Math.ceil(viewport.height);
+
+            context.fillStyle = "#ffffff";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+
+            const blob = await new Promise((resolve, reject) => {
+                canvas.toBlob(result => {
+                    if (result) resolve(result);
+                    else reject(new Error("Could not convert page " + pageNumber));
+                }, "image/jpeg", 0.92);
+            });
+
+            const details = metadata[pageNumber] || {
+                name: "Panda Card " + String(pageNumber).padStart(3, "0"),
+                description: "Panda card extracted from PDF page " + pageNumber + ".",
+                category: "newly",
+                price: 500
+            };
+
+            const filename =
+                String(pageNumber).padStart(3, "0") + "-" +
+                slugify(details.name) + ".jpg";
+
+            const imageFile = new File([blob], filename, {
+                type: "image/jpeg"
+            });
+
+            cards.push({
+                page: pageNumber,
+                name: details.name,
+                description: details.description,
+                category: details.category,
+                price: details.price,
+                disappear_day:
+                    details.category === "disappearing"
+                        ? details.disappear_day
+                        : null,
+                bonus_referral_threshold:
+                    details.category === "bonus"
+                        ? details.bonus_referral_threshold
+                        : null,
+                imageFile: imageFile,
+                previewUrl: URL.createObjectURL(blob),
+                image_url: "",
+                uploadStatus: "pending",
+                uploadError: ""
+            });
+
+            setProgress(
+                "extractProgress",
+                (pageNumber / totalPages) * 100
+            );
+
+            $("pdfStatus").textContent =
+                "Extracted page " + pageNumber + " of " + totalPages + ".";
+
+            if (pageNumber % 3 === 0) {
+                renderCards();
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+
+        renderCards();
+        updateStats();
+
+        $("pdfStatus").textContent =
+            "Finished extracting " + cards.length + " pages. Review the cards below.";
+
+        $("uploadStatus").textContent =
+            "Ready to upload " + cards.length + " cards to Cloudflare R2.";
 
     } catch (error) {
-      failed++;
+        console.error(error);
 
-      card.upload_error =
-        error.message || String(error);
+        $("pdfStatus").textContent =
+            "PDF extraction failed: " + error.message;
+
+        alert("PDF extraction failed: " + error.message);
+
+    } finally {
+        $("extractButton").disabled = false;
+    }
+}
+
+function renderCards() {
+    const grid = $("cardGrid");
+    grid.innerHTML = "";
+
+    cards.forEach((card, index) => {
+        const article = document.createElement("article");
+        article.className = "card";
+
+        const image = document.createElement("img");
+        image.src = card.previewUrl;
+        image.alt = card.name;
+        image.loading = "lazy";
+
+        const body = document.createElement("div");
+        body.className = "card-body";
+
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent =
+            "PAGE " + card.page + " · " + card.category.toUpperCase();
+
+        const title = document.createElement("h3");
+        title.textContent = card.name;
+
+        const pageText = document.createElement("p");
+        pageText.textContent = "PDF page: " + card.page;
+
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "Card Name";
+
+        const nameInput = document.createElement("input");
+        nameInput.value = card.name;
+        nameInput.addEventListener("change", () => {
+            card.name = nameInput.value.trim() || "Panda Card " + card.page;
+            title.textContent = card.name;
+        });
+
+        const descLabel = document.createElement("label");
+        descLabel.textContent = "Description";
+
+        const descInput = document.createElement("textarea");
+        descInput.value = card.description;
+        descInput.addEventListener("change", () => {
+            card.description = descInput.value.trim();
+        });
+
+        const categoryLabel = document.createElement("label");
+        categoryLabel.textContent = "Category";
+
+        const categorySelect = document.createElement("select");
+
+        ["newly", "vip", "disappearing", "bonus"].forEach(category => {
+            const option = document.createElement("option");
+            option.value = category;
+            option.textContent = category;
+            if (card.category === category) option.selected = true;
+            categorySelect.appendChild(option);
+        });
+
+        categorySelect.addEventListener("change", () => {
+            card.category = categorySelect.value;
+
+            if (card.category !== "disappearing") {
+                card.disappear_day = null;
+            } else if (card.disappear_day === null) {
+                card.disappear_day = 0;
+            }
+
+            if (card.category !== "bonus") {
+                card.bonus_referral_threshold = null;
+            } else if (card.bonus_referral_threshold === null) {
+                card.bonus_referral_threshold = 5;
+            }
+
+            renderCards();
+        });
+
+        const priceLabel = document.createElement("label");
+        priceLabel.textContent = "Price (₦)";
+
+        const priceInput = document.createElement("input");
+        priceInput.type = "number";
+        priceInput.min = "0";
+        priceInput.step = "1";
+        priceInput.value = card.price;
+
+        priceInput.addEventListener("change", () => {
+            card.price = Math.max(0, Number(priceInput.value) || 0);
+        });
+
+        body.append(
+            badge,
+            title,
+            pageText,
+            nameLabel,
+            nameInput,
+            descLabel,
+            descInput,
+            categoryLabel,
+            categorySelect,
+            priceLabel,
+            priceInput
+        );
+
+        if (card.category === "disappearing") {
+            const dayLabel = document.createElement("label");
+            dayLabel.textContent = "Disappear Day (0–6)";
+
+            const dayInput = document.createElement("input");
+            dayInput.type = "number";
+            dayInput.min = "0";
+            dayInput.max = "6";
+            dayInput.step = "1";
+            dayInput.value = card.disappear_day ?? 0;
+
+            dayInput.addEventListener("change", () => {
+                const value = Number(dayInput.value);
+                card.disappear_day = Math.max(0, Math.min(6,
+                    Number.isFinite(value) ? value : 0
+                ));
+                dayInput.value = card.disappear_day;
+            });
+
+            body.append(dayLabel, dayInput);
+        }
+
+        if (card.category === "bonus") {
+            const thresholdLabel = document.createElement("label");
+            thresholdLabel.textContent = "Referral Threshold (5–15)";
+
+            const thresholdInput = document.createElement("input");
+            thresholdInput.type = "number";
+            thresholdInput.min = "5";
+            thresholdInput.max = "15";
+            thresholdInput.step = "1";
+            thresholdInput.value = card.bonus_referral_threshold ?? 5;
+
+            thresholdInput.addEventListener("change", () => {
+                const value = Number(thresholdInput.value);
+                card.bonus_referral_threshold = Math.max(5, Math.min(15,
+                    Number.isFinite(value) ? value : 5
+                ));
+                thresholdInput.value = card.bonus_referral_threshold;
+            });
+
+            body.append(thresholdLabel, thresholdInput);
+        }
+
+        const status = document.createElement("div");
+        status.className = "card-status " + card.uploadStatus;
+
+        if (card.image_url) {
+            status.textContent = "✓ Uploaded successfully";
+        } else if (card.uploadStatus === "error") {
+            status.textContent = "✗ " + card.uploadError;
+        } else if (card.uploadStatus === "uploading") {
+            status.textContent = "Uploading...";
+        } else {
+            status.textContent = "Waiting for upload";
+        }
+
+        body.appendChild(status);
+
+        if (card.image_url) {
+            const urlText = document.createElement("p");
+            urlText.textContent = card.image_url;
+            body.appendChild(urlText);
+        }
+
+        article.append(image, body);
+        grid.appendChild(article);
+    });
+}
+
+$("uploadButton").addEventListener("click", () => uploadCards(false));
+
+$("retryButton").addEventListener("click", () => uploadCards(true));
+
+async function uploadCards(retryOnly) {
+    if (isUploading) return;
+
+    const queue = cards.filter(card => {
+        if (card.image_url) return false;
+        if (retryOnly && card.uploadStatus !== "error") return false;
+        return true;
+    });
+
+    if (queue.length === 0) {
+        $("uploadStatus").textContent = "There are no cards to upload.";
+        updateStats();
+        return;
     }
 
-    uploadedStat.textContent = uploaded;
-    failedStat.textContent = failed;
+    isUploading = true;
+    updateStats();
 
-    progressBar.style.width =
-      ((i + 1) / total * 100) + '%';
+    let completed = 0;
+    let succeeded = 0;
+    let failed = 0;
 
-    renderCards();
-  }
+    $("uploadStatus").textContent =
+        "Starting upload of " + queue.length + " card images...";
 
-  const remaining = extractedCards.filter(
-    card => !card.image_url
-  ).length;
+    setProgress("uploadProgress", 0);
 
-  setStatus(
-    'Upload pass finished.\n' +
-    'Successful images: ' + uploaded + ' / ' + total + '\n' +
-    'Failed images in this pass: ' + failed + '\n' +
-    'Images remaining: ' + remaining + '\n\n' +
-    (
-      remaining
-        ? 'You can click Upload All Images to R2 again to retry.'
-        : 'All images have been uploaded successfully.'
-    )
-  );
+    for (const card of queue) {
+        card.uploadStatus = "uploading";
+        card.uploadError = "";
 
-  downloadBtn.disabled =
-    !extractedCards.some(card => card.image_url);
+        renderCards();
 
-  busy = false;
+        $("uploadStatus").textContent =
+            "Uploading page " + card.page + " (" +
+            (completed + 1) + " of " + queue.length + ")...";
 
-  extractBtn.disabled =
-    !(pdfInput.files && pdfInput.files[0]);
+        try {
+            const publicUrl = await uploadImageToR2(card.imageFile);
 
-  uploadBtn.disabled =
-    !extractedCards.some(card => !card.image_url);
-});
+            card.image_url = publicUrl;
+            card.uploadStatus = "success";
+            succeeded++;
 
+        } catch (error) {
+            console.error("Upload failed for page " + card.page, error);
+
+            card.uploadStatus = "error";
+            card.uploadError = error.message || "Unknown upload error";
+            failed++;
+        }
+
+        completed++;
+
+        setProgress(
+            "uploadProgress",
+            (completed / queue.length) * 100
+        );
+
+        updateStats();
+        renderCards();
+    }
+
+    isUploading = false;
+    updateStats();
+
+    $("uploadStatus").textContent =
+        "Upload finished. Successful: " + succeeded +
+        ". Failed: " + failed +
+        ". Total processed: " + completed + ".";
+
+    if (failed > 0) {
+        $("uploadStatus").textContent +=
+            " Tap Retry Failed Uploads to retry the failed cards.";
+    }
+
+    if (succeeded > 0) {
+        $("uploadStatus").textContent +=
+            " You can now download the JSON TXT file.";
+    }
+}
 
 /*
-==========================================================
-DOWNLOAD JSON FILE
-==========================================================
-
-The downloaded file contains only successfully uploaded cards.
-
-Standard fields:
-name
-description
-image_url
-price
-category
-disappear_day
-
-Bonus cards also include:
-bonus_referral_threshold
+=========================================================
+JSON EXPORT
+=========================================================
+Only successfully uploaded cards are exported.
+Internal properties such as previewUrl and imageFile are omitted.
 */
 
-downloadBtn.addEventListener('click', () => {
-  const uploadedCards = extractedCards.filter(
-    card => card.image_url
-  );
+$("exportButton").addEventListener("click", exportJSON);
 
-  if (!uploadedCards.length) {
-    alert(
-      'No uploaded cards are available for export yet.'
-    );
+function exportJSON() {
+    const uploadedCards = cards
+        .filter(card => card.image_url)
+        .map(card => {
+            const output = {
+                name: card.name,
+                description: card.description,
+                image_url: card.image_url,
+                price: Number(card.price),
+                category: card.category
+            };
 
-    return;
-  }
+            if (card.category === "disappearing") {
+                output.disappear_day = Number(card.disappear_day);
+            }
 
-  const missing = extractedCards.filter(
-    card => !card.image_url
-  );
+            if (card.category === "bonus") {
+                output.bonus_referral_threshold =
+                    Number(card.bonus_referral_threshold);
+            }
 
-  if (missing.length) {
-    const proceed = confirm(
-      missing.length +
-      ' card(s) have not been uploaded successfully.\n\n' +
-      'The JSON export will include only cards with image URLs.\n\n' +
-      'Continue?'
-    );
+            return output;
+        });
 
-    if (!proceed) {
-      return;
-    }
-  }
-
-  const output = uploadedCards.map(card => {
-    const item = {
-      name: card.name,
-
-      description: card.description,
-
-      image_url: card.image_url,
-
-      price: card.price,
-
-      category: card.category,
-
-      disappear_day:
-        card.category === 'disappearing'
-          ? card.disappear_day
-          : null
-    };
-
-    if (card.category === 'bonus') {
-      item.bonus_referral_threshold =
-        card.bonus_referral_threshold;
+    if (uploadedCards.length === 0) {
+        alert("No successfully uploaded cards are available to export.");
+        return;
     }
 
-    return item;
-  });
+    const json = JSON.stringify(uploadedCards, null, 2);
 
-  const jsonText = JSON.stringify(
-    output,
-    null,
-    2
-  );
+    const blob = new Blob([json], {
+        type: "text/plain;charset=utf-8"
+    });
 
-  const blob = new Blob(
-    [jsonText],
-    {
-      type: 'text/plain;charset=utf-8'
-    }
-  );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-  const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = "panda-card-uploaded-cards.txt";
 
-  const a = document.createElement('a');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-  a.href = url;
-  a.download = 'panda-card-import.json.txt';
-
-  document.body.appendChild(a);
-
-  a.click();
-
-  a.remove();
-
-  setTimeout(() => {
     URL.revokeObjectURL(url);
-  }, 1000);
-});
+}
 
+/*
+=========================================================
+INITIALIZATION
+=========================================================
+*/
+
+updateStats();
 </script>
+
 </body>
 </html>

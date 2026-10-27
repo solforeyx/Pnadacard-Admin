@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-
   <div id="loginScreen" class="login-screen">
     <div class="login-card">
       <img src="https://i.imgur.com/9aLmHyS.png">
@@ -33,12 +32,13 @@
 
     <nav class="desktop-nav">
       <a href="index.html" class="active" data-roles="owner,staff">Overview</a>
-      <a href="money.html" data-roles="owner,staff">Treasury</a>
+      <a href="money.html" data-roles="owner">Treasury</a>
       <a href="withdrawals.html" data-roles="owner,staff">Withdrawals</a>
       <a href="upload-card.html" data-roles="owner,staff">Cards</a>
       <a href="users.html" data-roles="owner">Users</a>
       <a href="announcements.html" data-roles="owner">Announcements</a>
       <a href="notifications.html" data-roles="owner">Notifications</a>
+      <a href="combo-tracker.html" data-roles="owner">Combo Tracker</a>
       <a href="config.html" data-roles="owner">Config</a>
     </nav>
 
@@ -66,10 +66,11 @@
 
     <nav class="mobile-nav">
       <a href="index.html" class="active"><span class="material-icons">dashboard</span>Home</a>
-      <a href="money.html"><span class="material-icons">account_balance</span>Money</a>
-      <a href="withdrawals.html"><span class="material-icons">payments</span>Payouts</a>
-      <a href="upload-card.html"><span class="material-icons">add_card</span>Cards</a>
+      <a href="money.html" data-roles="owner"><span class="material-icons">account_balance</span>Money</a>
+      <a href="withdrawals.html" data-roles="owner,staff"><span class="material-icons">payments</span>Payouts</a>
+      <a href="upload-card.html" data-roles="owner,staff"><span class="material-icons">add_card</span>Cards</a>
       <a href="users.html" data-roles="owner"><span class="material-icons">people</span>Users</a>
+      <a href="combo-tracker.html" data-roles="owner"><span class="material-icons">track_changes</span>Combo</a>
       <a href="notifications.html" data-roles="owner"><span class="material-icons">notifications</span>Push</a>
     </nav>
   </div>

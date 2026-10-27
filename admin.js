@@ -1,33 +1,24 @@
 // ============================================================
 // PANDA CARD — ADMIN.JS (Role-aware + R2 Upload + Notifications)
 // Owner: solforeyx@gmail.com — full access
-// Staff: staff@gmail.com — Treasury, Withdrawals, Cards only
+// Staff: staff@gmail.com — Treasury (REMOVED), Withdrawals, Cards only
 // ============================================================
 
 const SUPABASE_URL = 'https://dxxhlaxdudtiktplwvbq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4eGhsYXhkdWR0aWt0cGx3dmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNDUzNzIsImV4cCI6MjEwNzkyMTM3Mn0.tSFal0bYl1jO-EMjwq_9A0KLfD0YLLqO0F7kgXeZ2aI';
 
-const ROLE_MAP = {
-  'solforeyx@gmail.com': 'owner',
-  'staff@gmail.com': 'staff'
+const ROLE_MAP = { 
+  'solforeyx@gmail.com': 'owner', 
+  'staff@gmail.com': 'staff' 
 };
 
 const ALLOWED_PAGES = {
-  'owner': [
-    'index.html',
-    'money.html',
-    'withdrawals.html',
-    'upload-card.html',
-    'users.html',
-    'announcements.html',
-    'notifications.html',
-    'config.html'
+  'owner': [ 
+    'index.html', 'money.html', 'withdrawals.html', 'upload-card.html', 
+    'users.html', 'announcements.html', 'notifications.html', 'config.html', 'combo-tracker.html' 
   ],
-  'staff': [
-    'index.html',
-    'money.html',
-    'withdrawals.html',
-    'upload-card.html'
+  'staff': [ 
+    'index.html', 'withdrawals.html', 'upload-card.html' // ✅ REMOVED money.html
   ]
 };
 
@@ -80,9 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.currentRole = role;
     window.currentUser = session.user;
 
-    // Page-level guard: staff cannot open owner-only pages
+    // Page-level guard: staff cannot open owner-only pages (like money.html)
     const page = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
     const allowed = ALLOWED_PAGES[role] || [];
+    
     if (!allowed.includes(page)) {
       window.location.href = 'index.html';
       return;
@@ -104,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 // ROLE UI
 // ============================================================
+
 function applyRoleUI() {
   document.querySelectorAll('[data-roles]').forEach(el => {
     const roles = (el.getAttribute('data-roles') || '').split(',').map(s => s.trim());
@@ -114,6 +107,7 @@ function applyRoleUI() {
     }
   });
 }
+
 window.applyRoleUI = applyRoleUI;
 
 function showLogin() {
@@ -121,9 +115,9 @@ function showLogin() {
   document.querySelectorAll('.app-layout').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.admin-dashboard').forEach(el => el.classList.add('hidden'));
 
-  // Clear stale credentials
   const pwd = document.getElementById('adminPassword');
   if (pwd) pwd.value = '';
+  
   const eml = document.getElementById('adminEmail');
   if (eml && eml.value !== 'solforeyx@gmail.com') {
     eml.value = 'solforeyx@gmail.com';
@@ -134,6 +128,7 @@ function showDashboard(user) {
   document.querySelectorAll('.login-screen').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.app-layout').forEach(el => el.classList.remove('hidden'));
   document.querySelectorAll('.admin-dashboard').forEach(el => el.classList.remove('hidden'));
+  
   document.querySelectorAll('.current-admin-email').forEach(el => {
     el.textContent = user.email;
   });
@@ -142,10 +137,12 @@ function showDashboard(user) {
 // ============================================================
 // AUTH
 // ============================================================
+
 async function adminLogin() {
   if (!sbClient) {
     return showToast('Initializing... please try again.', 'info');
   }
+
   const emailEl = document.getElementById('adminEmail');
   const passwordEl = document.getElementById('adminPassword');
   const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
@@ -154,6 +151,7 @@ async function adminLogin() {
   if (!email || !password) {
     return showToast('Email and password are required.', 'error');
   }
+
   if (!ROLE_MAP[email]) {
     return showToast('Access Denied: Not an admin account.', 'error');
   }
@@ -175,21 +173,33 @@ function goToDashboard() {
 // ============================================================
 // UI HELPERS
 // ============================================================
+
 function showToast(message, type = 'info') {
   const toast = document.createElement('div');
   toast.textContent = message;
   const bg = type === 'error' ? '#EF4444' : type === 'success' ? '#10B981' : '#FFD700';
   const fg = type === 'info' ? '#000' : '#fff';
+  
   toast.style.cssText = `
-    position: fixed; top: 20px; right: 20px; z-index: 9999;
-    padding: 12px 18px; border-radius: 8px; font-size: 13px;
-    font-weight: 600; color: ${fg}; background: ${bg};
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: ${fg};
+    background: ${bg};
     box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-    max-width: 320px; opacity: 0;
+    max-width: 320px;
+    opacity: 0;
     transition: opacity 0.2s ease;
   `;
+  
   document.body.appendChild(toast);
   requestAnimationFrame(() => { toast.style.opacity = '1'; });
+  
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 250);
@@ -198,20 +208,14 @@ function showToast(message, type = 'info') {
 
 function formatMoney(amount) {
   const n = Number(amount || 0);
-  return '₦' + n.toLocaleString('en-NG', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
+  return '₦' + n.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 function formatDate(dateString) {
   if (!dateString) return '—';
   const d = new Date(dateString);
   if (isNaN(d.getTime())) return '—';
-  return d.toLocaleString('en-NG', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
+  return d.toLocaleString('en-NG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function escapeHTML(str) {
@@ -227,12 +231,12 @@ function escapeHTML(str) {
 // ============================================================
 // R2 UPLOAD HELPER
 // ============================================================
+
 async function uploadImageToR2(file) {
   try {
     const { data, error } = await sbClient.functions.invoke('generate-r2-upload-url', {
       body: { fileName: file.name, contentType: file.type }
     });
-
     if (error) throw new Error(error.message);
     if (!data || !data.uploadUrl) throw new Error('Failed to generate upload URL');
 
@@ -243,7 +247,6 @@ async function uploadImageToR2(file) {
     });
 
     if (!uploadRes.ok) throw new Error('Failed to upload to R2');
-
     return data.publicUrl;
   } catch (err) {
     console.error('R2 Upload Error:', err);
@@ -254,6 +257,7 @@ async function uploadImageToR2(file) {
 // ============================================================
 // EXPORTS
 // ============================================================
+
 window.adminLogin = adminLogin;
 window.adminLogout = adminLogout;
 window.goToDashboard = goToDashboard;

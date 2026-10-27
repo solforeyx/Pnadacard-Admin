@@ -33,30 +33,29 @@
 
     <nav class="desktop-nav">
       <a href="index.html" data-roles="owner,staff">Overview</a>
-      <a href="money.html" data-roles="owner,staff">Treasury</a>
+      <a href="money.html" data-roles="owner">Treasury</a>
       <a href="withdrawals.html" class="active" data-roles="owner,staff">Withdrawals</a>
       <a href="upload-card.html" data-roles="owner,staff">Cards</a>
       <a href="users.html" data-roles="owner">Users</a>
       <a href="announcements.html" data-roles="owner">News</a>
+      <a href="combo-tracker.html" data-roles="owner">Combo Tracker</a>
       <a href="config.html" data-roles="owner">Config</a>
     </nav>
 
     <main class="container">
       <div class="section-box">
         <h2 style="font-size:14px; margin-bottom:10px;">
-          <span class="material-icons" style="font-size:16px; vertical-align:middle;">pending_actions</span>
-          Pending Payouts
+          <span class="material-icons" style="font-size:16px; vertical-align:middle;">pending_actions</span> Pending Payouts
         </h2>
         <table>
-          <thead><tr><th>User / Bank</th><th>Amount</th><th>Action</th></tr></thead>
+          <thead><tr><th>User / Bank</th><th>Amount / Fee / Net</th><th>Action</th></tr></thead>
           <tbody id="wdTable"></tbody>
         </table>
       </div>
 
       <div class="section-box" style="margin-top:16px;">
         <h2 style="font-size:14px; margin-bottom:10px;">
-          <span class="material-icons" style="font-size:16px; vertical-align:middle;">history</span>
-          Recently Processed (last 20)
+          <span class="material-icons" style="font-size:16px; vertical-align:middle;">history</span> Recently Processed (last 20)
         </h2>
         <table>
           <thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
@@ -66,11 +65,12 @@
     </main>
 
     <nav class="mobile-nav">
-      <a href="index.html"><span class="material-icons">dashboard</span>Home</a>
-      <a href="money.html"><span class="material-icons">account_balance</span>Money</a>
-      <a href="withdrawals.html" class="active"><span class="material-icons">payments</span>Payouts</a>
-      <a href="upload-card.html"><span class="material-icons">add_card</span>Cards</a>
+      <a href="index.html" data-roles="owner,staff"><span class="material-icons">dashboard</span>Home</a>
+      <a href="money.html" data-roles="owner"><span class="material-icons">account_balance</span>Money</a>
+      <a href="withdrawals.html" class="active" data-roles="owner,staff"><span class="material-icons">payments</span>Payouts</a>
+      <a href="upload-card.html" data-roles="owner,staff"><span class="material-icons">add_card</span>Cards</a>
       <a href="users.html" data-roles="owner"><span class="material-icons">people</span>Users</a>
+      <a href="combo-tracker.html" data-roles="owner"><span class="material-icons">track_changes</span>Combo</a>
     </nav>
   </div>
 
@@ -87,7 +87,7 @@
         <label>Reason for rejection (sent to user)</label>
         <input type="text" id="rejectReason" placeholder="e.g. Invalid bank details, duplicate request...">
       </div>
-      <button class="btn-primary" style="background:var(--red);" onclick="confirmReject()">Confirm Rejection & Refund</button>
+      <button class="btn-primary" style="background:var(--red);" onclick="confirmReject(this)">Confirm Rejection & Refund</button>
     </div>
   </div>
 
@@ -101,7 +101,7 @@
         .order('requested_at');
 
       const tbody = document.getElementById('wdTable');
-
+      
       if (pErr) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--red);">${escapeHTML(pErr.message)}</td></tr>`;
       } else if (!pending || !pending.length) {
@@ -112,22 +112,27 @@
             <td>
               <div style="font-weight:600;">${escapeHTML(w.users?.full_name || 'User')}</div>
               <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(w.users?.email || '')}</div>
-              <div style="font-size:10px; color:var(--text-muted);">
-                ${escapeHTML(w.bank_details?.bank || '')} — ${escapeHTML(w.bank_details?.account_number || '')}
+              <div style="font-size:11px; color:var(--gold); margin-top:4px;">
+                ${escapeHTML(w.bank_details?.bank || '')} — <b>${escapeHTML(w.bank_details?.account_number || '')}</b>
               </div>
               <div style="font-size:10px; color:var(--text-muted);">
                 ${escapeHTML(w.bank_details?.accountName || w.bank_details?.account_name || '')}
               </div>
             </td>
             <td>
-              <div class="text-gold" style="font-weight:700;">${formatMoney(w.amount)}</div>
-              <div style="font-size:10px; color:var(--text-muted);">
-                Net: ${formatMoney(w.net_amount)} (fee ${formatMoney(w.fee)})
+              <div style="font-size:11px; color:var(--text-muted);">
+                Requested: <span style="color:#fff;">${formatMoney(w.amount)}</span>
               </div>
-              <div style="font-size:10px; color:var(--text-muted);">${w.dp_used || 0} DP used</div>
+              <div style="font-size:11px; color:var(--text-muted);">
+                Fee (15%): <span style="color:var(--green);">${formatMoney(w.fee)}</span>
+              </div>
+              <div style="font-weight:700; color:var(--gold); font-size:14px; margin-top:4px;">
+                Send: ${formatMoney(w.net_amount)}
+              </div>
+              <div style="font-size:10px; color:var(--text-muted);">${w.dp_used || 0} DP deducted</div>
             </td>
             <td>
-              <button class="btn-sm approve" onclick="processWd('${w.id}', 'paid')">Paid</button>
+              <button class="btn-sm approve" onclick="processWd('${w.id}', this)">Paid</button>
               <button class="btn-sm reject" onclick="openRejectModal('${w.id}')">Reject</button>
             </td>
           </tr>
@@ -142,6 +147,7 @@
         .limit(20);
 
       const histBody = document.getElementById('wdHistoryTable');
+      
       if (!processed || !processed.length) {
         histBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No history yet.</td></tr>';
       } else {
@@ -153,7 +159,10 @@
                 <div style="font-weight:600; font-size:12px;">${escapeHTML(w.users?.full_name || 'User')}</div>
                 <div style="font-size:10px; color:var(--text-muted);">${escapeHTML(w.users?.email || '')}</div>
               </td>
-              <td>${formatMoney(w.amount)}</td>
+              <td>
+                <div style="font-size:12px; font-weight:700;">${formatMoney(w.net_amount)} <span style="font-size:10px; color:var(--text-muted);">(Net)</span></div>
+                <div style="font-size:10px; color:var(--text-muted);">From ${formatMoney(w.amount)}</div>
+              </td>
               <td>
                 <span style="color:${color}; font-weight:700; font-size:11px; text-transform:uppercase;">
                   ${escapeHTML(w.status)}
@@ -169,14 +178,12 @@
       }
     };
 
-    async function processWd(id, status) {
-      // status = 'paid' only from main button. Reject goes through modal.
-      if (status !== 'paid') return;
-
-      if (!confirm('Confirm you have SENT the money externally?\n\nClicking OK will:\n• Mark as PAID\n• Send notification to the user\n• Remove from pending list')) return;
-
-      const btn = event && event.target;
-      if (btn) { btn.disabled = true; btn.textContent = '...'; }
+    async function processWd(id, btn) {
+      if (!confirm('Confirm you have SENT the net amount externally?\n\nClicking OK will:\n• Mark as PAID\n• Send notification to the user\n• Remove from pending list')) return;
+      
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '...';
 
       try {
         const { data, error } = await sbClient.rpc('process_withdrawal', {
@@ -184,6 +191,7 @@
           p_action: 'paid',
           p_admin_note: 'Paid by admin'
         });
+
         if (error) throw new Error(error.message);
         if (data && data.error) throw new Error(data.error);
 
@@ -191,7 +199,8 @@
         loadPageData();
       } catch (err) {
         showToast(err.message || 'Failed to process', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'Paid'; }
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 
@@ -201,15 +210,16 @@
       document.getElementById('rejectModal').classList.add('open');
     }
 
-    async function confirmReject() {
+    async function confirmReject(btn) {
       const id = document.getElementById('rejectWdId').value;
       const reason = document.getElementById('rejectReason').value.trim();
-      if (reason.length < 3) return showToast('Please provide a rejection reason', 'error');
 
+      if (reason.length < 3) return showToast('Please provide a rejection reason', 'error');
       if (!confirm('Reject this withdrawal?\n\n• Amount + DP will be REFUNDED\n• User will be notified\n\nThis cannot be undone.')) return;
 
-      const btn = event && event.target;
-      if (btn) { btn.disabled = true; btn.textContent = 'Rejecting...'; }
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Rejecting...';
 
       try {
         const { data, error } = await sbClient.rpc('process_withdrawal', {
@@ -217,6 +227,7 @@
           p_action: 'rejected',
           p_admin_note: reason
         });
+
         if (error) throw new Error(error.message);
         if (data && data.error) throw new Error(data.error);
 
@@ -225,7 +236,8 @@
         loadPageData();
       } catch (err) {
         showToast(err.message || 'Failed to reject', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'Confirm Rejection & Refund'; }
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     }
 

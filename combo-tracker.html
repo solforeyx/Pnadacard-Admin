@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Combo & Demand Tracker</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="admin.css">
+  <style>
+    .tracker-card { background: var(--surface-hover); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .tracker-card img { width: 50px; height: 65px; object-fit: cover; border-radius: 6px; margin-right: 15px; }
+    .tracker-info { display: flex; align-items: center; }
+    .tracker-info h4 { margin: 0 0 4px 0; font-size: 14px; }
+    .tracker-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
+    .tracker-badge { background: var(--gold); color: #000; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 11px; white-space: nowrap; }
+    .error-box { background: rgba(239,68,68,0.1); border: 1px solid var(--red); color: var(--red); padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <img src="https://i.imgur.com/9aLmHyS.png">
+      <h1>Panda<span>Admin</span></h1>
+      <input type="email" id="adminEmail" value="solforeyx@gmail.com">
+      <input type="password" id="adminPassword" placeholder="Password">
+      <button class="btn-primary" onclick="adminLogin()">Login</button>
+    </div>
+  </div>
+
+  <div id="adminDashboard" class="app-layout hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="back-btn" onclick="goToDashboard()"><span class="material-icons">chevron_left</span></button>
+        <h1>Combo & Demand Tracker</h1>
+      </div>
+      <div class="topbar-right">
+        <span class="user-email current-admin-email"></span>
+        <button class="btn-logout" onclick="adminLogout()">Logout</button>
+      </div>
+    </header>
+
+    <nav class="desktop-nav">
+      <a href="index.html" data-roles="owner,staff">Overview</a>
+      <a href="money.html" data-roles="owner">Treasury</a>
+      <a href="withdrawals.html" data-roles="owner,staff">Withdrawals</a>
+      <a href="upload-card.html" data-roles="owner,staff">Cards</a>
+      <a href="users.html" data-roles="owner">Users</a>
+      <a href="announcements.html" data-roles="owner">News</a>
+      <a href="combo-tracker.html" class="active" data-roles="owner">Combo Tracker</a>
+      <a href="config.html" data-roles="owner">Config</a>
+    </nav>
+
+    <main class="container">
+      <div class="grid-stats">
+        <div class="stat-card">
+          <div class="label">Total Users</div>
+          <div class="value" id="totalUsers">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total Cards</div>
+          <div class="value" id="totalCards">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Combo Groups Today</div>
+          <div class="value text-gold" id="totalGroups">0</div>
+        </div>
+      </div>
+
+      <div class="section-box">
+        <h2><span class="material-icons">today</span> Today's Daily Combo Assignments</h2>
+        <div id="comboError" class="error-box" style="display:none;"></div>
+        <div id="comboGroups">
+          <p style="color:var(--text-muted); text-align:center;">Loading combos...</p>
+        </div>
+      </div>
+
+      <div class="section-box">
+        <h2><span class="material-icons">trending_up</span> Card Demand Tracker</h2>
+        <select id="demandSelect" class="form-group" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text); margin-bottom:15px;" onchange="loadDemand(this.value)">
+          <option value="">Select a card to view demand...</option>
+        </select>
+        <div id="demandList">
+          <p style="color:var(--text-muted); text-align:center;">Select a card above.</p>
+        </div>
+      </div>
+
+      <div class="section-box">
+        <h2><span class="material-icons">hourglass_bottom</span> Disappearing Cards Schedule</h2>
+        <div id="disappearingList">
+          <p style="color:var(--text-muted); text-align:center;">Loading...</p>
+        </div>
+      </div>
+    </main>
+
+    <nav class="mobile-nav">
+      <a href="index.html" data-roles="owner,staff"><span class="material-icons">dashboard</span>Home</a>
+      <a href="money.html" data-roles="owner"><span class="material-icons">account_balance</span>Money</a>
+      <a href="withdrawals.html" data-roles="owner,staff"><span class="material-icons">payments</span>Payouts</a>
+      <a href="upload-card.html" data-roles="owner,staff"><span class="material-icons">add_card</span>Cards</a>
+      <a href="users.html" data-roles="owner"><span class="material-icons">people</span>Users</a>
+      <a href="combo-tracker.html" class="active" data-roles="owner"><span class="material-icons">track_changes</span>Combo</a>
+    </nav>
+  </div>
+
+  <script src="admin.js"></script>
+  <script>
+    let allCardsData = [];
+
+    window.loadPageData = async function() {
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      const dayOfWeek = today.getDay();
+
+      const { count: userCount } = await sbClient.from('users').select('*', { count: 'exact', head: true });
+      document.getElementById('totalUsers').textContent = userCount || 0;
+
+      const { data: allCards, count: cardCount } = await sbClient.from('cards').select('*');
+      allCardsData = allCards || [];
+      document.getElementById('totalCards').textContent = cardCount || 0;
+
+      // Populate Demand Select
+      const sel = document.getElementById('demandSelect');
+      sel.innerHTML = '<option value="">Select a card to view demand...</option>';
+      allCardsData.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+
+      // Disappearing Cards
+      const discCards = allCardsData.filter(c => c.is_disappearing);
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      if (discCards.length === 0) {
+        document.getElementById('disappearingList').innerHTML = '<p style="color:var(--text-muted); text-align:center;">No disappearing cards configured.</p>';
+      } else {
+        document.getElementById('disappearingList').innerHTML = discCards.map(c => `
+          <div class="tracker-card">
+            <div class="tracker-info">
+              <img src="${c.image_url}" onerror="this.src='https://i.imgur.com/9aLmHyS.png'">
+              <div>
+                <h4>${escapeHTML(c.name)}</h4>
+                <p>Price: ${formatMoney(c.current_price || 0)}</p>
+              </div>
+            </div>
+            <div class="tracker-badge">Appears: ${days[c.disappear_day || 0]}</div>
+          </div>
+        `).join('');
+      }
+
+      // Combo Groups
+      const errBox = document.getElementById('comboError');
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        errBox.style.display = 'block';
+        errBox.innerHTML = '<b>No Combos Today:</b> It is the weekend. The daily combo engine skips Saturdays and Sundays.';
+        document.getElementById('comboGroups').innerHTML = '';
+        return;
+      }
+
+      const { data: combos } = await sbClient.from('daily_combo').select('assigned_card_id').eq('combo_date', todayStr);
+      if (!combos || combos.length === 0) {
+        errBox.style.display = 'block';
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        const { count: eligibleUsers } = await sbClient.from('users').select('*', { count: 'exact', head: true }).lt('created_at', yesterday);
+        
+        if (eligibleUsers === 0) {
+          errBox.innerHTML = '<b>No Combos Today:</b> There are no users older than 24 hours. New users skip their first day.';
+        } else {
+          errBox.innerHTML = '<b>No Combos Today:</b> The engine ran, but could not find enough eligible cards for the user groups.';
+        }
+        document.getElementById('comboGroups').innerHTML = '';
+        return;
+      }
+
+      errBox.style.display = 'none';
+
+      const grouped = {};
+      combos.forEach(c => {
+        grouped[c.assigned_card_id] = (grouped[c.assigned_card_id] || 0) + 1;
+      });
+
+      document.getElementById('totalGroups').textContent = Object.keys(grouped).length;
+
+      let html = '';
+      for (const [cardId, count] of Object.entries(grouped)) {
+        const card = allCardsData.find(c => c.id === cardId) || { name: 'Unknown', current_price: 0, image_url: '' };
+        html += `
+          <div class="tracker-card">
+            <div class="tracker-info">
+              <img src="${card.image_url || 'https://i.imgur.com/9aLmHyS.png'}" onerror="this.src='https://i.imgur.com/9aLmHyS.png'">
+              <div>
+                <h4>${escapeHTML(card.name)}</h4>
+                <p>Price: ${formatMoney(card.current_price || 0)}</p>
+                <p style="color:var(--gold); font-size:10px; margin-top:4px;">Assigned based on Deposit Balance grouping</p>
+              </div>
+            </div>
+            <div class="tracker-badge">${count} Users</div>
+          </div>
+        `;
+      }
+      document.getElementById('comboGroups').innerHTML = html;
+    };
+
+    async function loadDemand(cardId) {
+      const el = document.getElementById('demandList');
+      if (!cardId) {
+        el.innerHTML = '<p style="color:var(--text-muted); text-align:center;">Select a card above.</p>';
+        return;
+      }
+      
+      el.innerHTML = '<p style="color:var(--gold); text-align:center;">Loading demand...</p>';
+      
+      const { count } = await sbClient.from('demands').select('*', { count: 'exact', head: true }).eq('card_id', cardId);
+      
+      el.innerHTML = `
+        <div class="tracker-card">
+          <div>
+            <h4>Total Active Demands</h4>
+            <p>Users waiting for someone to list this card on Trade.</p>
+          </div>
+          <div class="tracker-badge" style="background:#4A90D9; color:#fff;">${count || 0} Demands</div>
+        </div>
+      `;
+    }
+
+    window.loadDemand = loadDemand;
+  </script>
+</body>
+</html>
